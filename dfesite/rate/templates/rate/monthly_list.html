@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body_block %}
+<link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
+<div class="scrollup float-right"><i class="fa fa-chevron-up"></i></div>
+<div class="jumbotron bg-cover" style="background-image: url(/static/images/stat_ratem.jpg)">
+    <h2>Нефтяные котировки</h2>
+</div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark d-flex justify-content-center">
+        <a class="btn btn-sm btn-outline-info text-dark" href="{% url 'rate:daily_list' %}">Курс доллара</a>
+        <a class="btn btn-sm btn-outline-info text-dark" href="{% url 'rate:chart' %}">Динамика курса доллара и нефти</a>
+        {% if user.is_authenticated %}
+            <form action="{% url 'rate:success' %}" method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" class="btn btn-sm btn-outline-info text-dark" name="run_script" value="Скачать таблицы">
+            </form>
+        {% endif %}
+    </nav>
+<div class="container">
+    <br><h5>Ежемесячный курс за баррель нефти марки "Юралс" в долларах США</h5><br>
+
+    <div class="row">
+        <div class="col-sm-5">
+            <div class="row">
+                <div class="col-md-3"><strong>Дата</strong></div>
+                <div class="col-md-3"><strong>Баррель</strong></div>
+                <div class="col-md-3"><strong>Курс &#36;</strong></div>
+            </div>
+            {% for m in monthly %}
+            <div class="row">
+                <div class="col-md-3">{{ m.date|date:"m.Y" }}</div>
+                <div class="col-md-3">{{ m.oil }} &#36;</div>
+                <div class="col-md-3">{{ m.usd }} &#8381;</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="col-sm-7 align-middle text-center">
+            {% autoescape off %}
+            {{ plot_divm }}
+            {% endautoescape %}
+        </div>
+    </div>
+    <nav aria-label="Page navigation example">
+        <ul class="pagination pagination-sm">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">предыдущая</a></li>
+        {% endif %}
+            <span class="current page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.</span>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">следующая</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
+        {% endif %}
+        </ul>
+    </nav>
+    <small>
+        <p> Данные получены с сайта Министерства экономического развития Российской Федерации, раздела
+            <a href="https://www.economy.gov.ru/material/departments/d12/konyunktura_mirovyh_tovarnyh_rynkov/">
+                "Конъюнктура мировых товарных рынков"
+            </a>
+        </p>
+        <p>
+            Расчет средней за истекший месяц цены на нефть сорта «Юралс» на средиземноморском и роттердамском рынках нефтяного сырья осуществляется с использованием данных, предоставленных Аргус Медиа (Раша) Лимитед / Argus Media (Russia) Limited, права на которые принадлежат Аргус Медиа Лимитед / Argus Media Limited.
+        </p>
+    </small>
+</div>
+{% endblock%}

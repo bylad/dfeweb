@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body_block %}
+<!--<style>-->
+<!--    body{-->
+<!--    position: relative;-->
+<!--    }-->
+
+<!--    #table1{padding-top:50px;height:50%;color: #000;}-->
+<!--    #table2{padding-top:50px;height:50%;color: #000;}-->
+<!--</style>-->
+
+<div class="jumbotron bg-cover"
+     style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%),
+                              url(https://placeimg.com/1500/480/tech)">
+    <h3>{{ price_detail.title|slice:":58" }}</h3>
+    <h3>{{ price_detail.title|slice:"58:" }}</h3>
+</div>
+<div class="container">
+    <div id="table1" class="container-fluid">
+<!--    <h5>Средние  цены на отдельные потребительские товары (услуги)</h5>-->
+
+    <table class="table table-bordered">
+        <thead class="thead-light">
+            <tr>
+                <th>Наименование товара (услуги)</th>
+                <th>Средние цены, рублей</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for ix in price_list %}
+            <tr>
+                <td>{{ ix.product }}</td>
+                <td>{{ ix.price|floatformat:2 }}</td>
+            <tr>
+        {% endfor %}
+            <tr></tr>
+        </tbody>
+
+    </table>
+
+    <p><small><sup>1)</sup> По выборочному кругу автозаправочных станций.</small>
+    </p>
+
+    </div>
+</div>
+{% endblock%}

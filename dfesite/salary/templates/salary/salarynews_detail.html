@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body_block %}
+<!--<style>-->
+<!--    body{-->
+<!--    position: relative;-->
+<!--    }-->
+
+<!--    #table1{padding-top:50px;height:50%;color: #000;}-->
+<!--    #table2{padding-top:50px;height:50%;color: #000;}-->
+<!--</style>-->
+
+<div class="jumbotron bg-cover"
+     style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%),
+                              url(https://placeimg.com/1500/480/tech)">
+    <h3>{{ salarynews_detail.title|slice:":114" }}<small><sup>1)</sup></small> {{ salarynews_detail.title|slice:"115:" }}</h3>
+</div>
+<div class="container">
+    {% if user.is_authenticated %}
+    <form class="d-flex justify-content-center" action="{% url 'salary:success' %}" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" name="news_pk" value="{{ salarynews_detail.pk }}">
+        <input type="submit" class="btn btn-sm btn-outline-info text-dark" name="run_script" value="Скачать презентацию">
+    </form>
+    <br>
+    {% endif %}
+
+    <div id="table1" class="container-fluid">
+<!--        <h5>Среднесписочные номинальные заработные платы начисленные за месяц</h5>-->
+        <table class="table table-bordered">
+            <thead class="thead-light">
+            {% for zh in salaryhead_list %}
+            {% if zh.pre_period == 'NaN' %}
+            <tr>
+              <th rowspan="2" scope="col" style="vertical-align: middle">Вид экономической деятельности</th>
+              <th rowspan="2" scope="rowgroup" style="vertical-align: middle">{{ zh.current_my }}</th>
+              <th colspan="3" scope="colgroup">{{ zh.period_mmy }}</th>
+            </tr>
+            <tr>
+              <th scope="col">{{ zh.pre_month }}</th>
+              <th scope="col">{{ zh.pre_year }}</th>
+              <th scope="col">{{ zh.middle }}</th>
+            </tr>
+            {% else %}
+            <tr style="text-align:center">
+              <th rowspan="3" scope="col" style="vertical-align:middle">Вид экономической деятельности</th>
+              <th colspan="3" scope="colgroup" style="vertical-align: middle">{{ zh.current_my }}</th>
+              <th colspan="3" scope="colgroup">{{ zh.period_mmy }}</th>
+            </tr>
+            <tr style="text-align:center">
+              <th rowspan="2" scope="rowgroup" style="vertical-align: middle">рублей</th>
+              <th colspan="2" scope="colgroup" style="vertical-align: middle">в % к</th>
+              <th rowspan="2" scope="rowgroup" style="vertical-align: middle">рублей</th>
+              <th colspan="2" scope="colgroup" style="vertical-align: middle">в % к</th>
+            </tr>
+            <tr style="text-align:center">
+              <th scope="col" style="vertical-align: middle">{{ zh.pre_month }}</th>
+              <th scope="col" style="vertical-align: middle">{{ zh.pre_year }}</th>
+              <th scope="col" style="vertical-align: middle">{{ zh.pre_period }}</th>
+              <th scope="col" style="vertical-align: middle">{{ zh.middle }}</th>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            </thead>
+
+            <tbody>
+            {% for zp in salarydetail_list %}
+                <tr style="text-align:right">
+                {% if forloop.counter == 1 %}
+                    <td style="text-align:left"><strong>{{ zp.employer }}</strong></td>
+                {% elif forloop.counter == 2 %}
+                    <td style="text-align:left">{{ zp.employer }}</td>
+                {% elif forloop.counter > 4 and forloop.counter < 8 %}
+                    <td style="text-align:left; padding-left:2em;">{{ zp.employer }}</td>
+                {% elif forloop.counter > 10 and forloop.counter < 20 %}
+                    <td style="text-align:left; padding-left:2em;">{{ zp.employer }}</td>
+                {% elif zp.employer == 'из нее научные исследования и разработки' %}
+                    <td style="text-align:left; padding-left:2em;">{{ zp.employer }}</td>
+                {% else %}
+                    <td style="text-align:left; padding-left:1.5em;">{{ zp.employer }}</td>
+                {% endif %}
+<!-- Текущие данные в рублях -->
+                {% if zp.get_nan_current == 0 %}
+                    <td></td>
+                {% elif zp.current == 0.0123456789 %}
+                    <td>...<small><sup>2)</sup></small></td>
+                {% elif zp.current == 0.0123454321 %}
+                    <td>-</td>
+                {% else %}
+                    <td>{{ zp.current|floatformat:2 }}</td>
+                {% endif %}
+<!-- Данные в % к предыдущему месяцу -->
+                {% if zp.get_nan_pre_month == 0 %}
+                    <td></td>
+                {% elif zp.pre_month == 0.0123456789 %}
+                    <td>...<small><sup>2)</sup></small></td>
+                {% elif zp.pre_month == 0.0123454321 %}
+                    <td>-</td>
+                {% else %}
+                    <td>{{ zp.pre_month|floatformat:2 }}</td>
+                {% endif %}
+<!-- Данные в % к предыдущему году -->
+                {% if zp.get_nan_pre_year == 0 %}
+                    <td></td>
+                {% elif zp.pre_year == 0.0123456789 %}
+                    <td>...<small><sup>2)</sup></small></td>
+                {% elif zp.pre_year == 0.0123454321 %}
+                    <td>-</td>
+                {% else %}
+                    <td>{{ zp.pre_year|floatformat:2 }}</td>
+                {% endif %}
+<!-- Данные в рублях к периоду -->
+                {% if zp.get_nan_period == 0 %}
+<!--                    <td></td>-->
+                {% elif zp.period == 0.0123456789 %}
+                    <td>...<small><sup>2)</sup></small></td>
+                {% elif zp.period == 0.0123454321 %}
+                    <td>-</td>
+                {% else %}
+                    <td>{{ zp.period|floatformat:2 }}</td>
+                {% endif %}
+<!-- Данные в % к периоду предыдущего года -->
+                {% if zp.get_nan_pre_period == 0 %}
+<!--                    <td></td>-->
+                {% elif zp.pre_period == 0.0123456789 %}
+                    <td>...<small><sup>2)</sup></small></td>
+                {% elif zp.pre_period == 0.0123454321 %}
+                    <td>-</td>
+                {% else %}
+                    <td>{{ zp.pre_period|floatformat:2 }}</td>
+                {% endif %}
+<!-- Данные в % к среднерегиональному уровню -->
+                {% if zp.get_nan_middle == 0 %}
+                    <td></td>
+                {% elif zp.middle == 0.0123456789 %}
+                    <td>...<small><sup>2)</sup></small></td>
+                {% elif zp.middle == 0.0123454321 %}
+                    <td>-</td>
+                {% else %}
+                    <td>{{ zp.middle|floatformat:2 }}</td>
+                {% endif %}
+
+                <tr>
+            {% endfor %}
+                <tr></tr>
+            </tbody>
+        </table>
+        <p><small><sup>1)</sup> Данные приведены по "чистым" видам экономической деятельности, сформированным на основании сведений организаций, представляемых по каждому осуществляемому ими виду деятельности.</small>
+        </p>
+        <p><small><sup>2)</sup> Данные не публикуются в целях обеспечения конфиденциальности первичных статистических данных, полученных от организаций, в соответствии с Федеральным законом от 29.11.2007 № 282-ФЗ "Об официальном статистическом учете и системе государственной статистики в Российской Федерации" (ст.4, п.5; ст.9, п.1).</small>
+        </p>
+
+        <hr class="my-4">
+        {% if salarynews_detail.href == '' %}
+        <p>Данные получены с сайта
+            <a href="https://arhangelskstat.gks.ru/">Управления Федеральной службы государственной статистики по Архангельской области и Ненецкому автономному округу</a
+        </p>
+        {% else %}
+        <p>Ссылка на источник: <a href="{{ salarynews_detail.href }}">{{ salarynews_detail.href }}</a></p>
+        <p>Дата опубликования: {{ salarynews_detail.pub_date|date:"d.m.Y" }}</p>
+        {% endif %}
+</div>
+
+    </div>
+</div>
+{% endblock%}

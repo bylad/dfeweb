@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body_block %}
+<link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
+<div class="scrollup float-right"><i class="fa fa-chevron-up"></i></div>
+<div class="jumbotron bg-cover" style="background-image: url(/static/images/stat_rate.jpg)">
+    <h2>Динамика котировок</h2>
+<!--    <hr class="my-4">-->
+<!--    <div class="row">-->
+<!--        <div class="col-4">-->
+<!--            <button type="button" class="btn btn-info">-->
+<!--                <a class="nav-link text-light" href="{% url 'rate:monthly_list' %}">Котировки нефти "Юралс"</a>-->
+<!--            </button>-->
+<!--        </div>-->
+<!--        <div class="col-4">-->
+<!--            <button type="button" class="btn btn-info">-->
+<!--                <a class="nav-link text-white" href="{% url 'rate:daily_list' %}"><< Назад</a>-->
+<!--            </button>-->
+<!--        </div>-->
+<!--    </div>-->
+</div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark d-flex justify-content-center">
+        <a class="btn btn-sm btn-outline-info text-dark" href="{% url 'rate:daily_list' %}">Курс валюты ЦБ</a>
+        <a class="btn btn-sm btn-outline-info text-dark" href="{% url 'rate:monthly_list' %}">Котировки нефти "Юралс"</a>
+        {% if user.is_authenticated %}
+            <form action="{% url 'rate:success' %}" method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" class="btn btn-sm btn-outline-info text-dark" name="run_script" value="Скачать таблицы">
+            </form>
+        {% endif %}
+    </nav>
+<div class="container">
+    <br>
+    {% autoescape off %}
+    {{ plot_divm }}
+    {% endautoescape %}
+
+    <br>
+    {% autoescape off %}
+    {{ plot_div }}
+    {% endautoescape %}
+
+    <table class="table table-bordered">
+    </table>
+</div>
+{% endblock%}

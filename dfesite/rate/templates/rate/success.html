@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block body_block %}
+<div class="jumbotron">
+    {% if download %}
+    <h2>Файл успешно создан!</h2>
+    <br>
+    <p class="lead">Путь к файлу:  {{ download }}</p>
+    {% else %}
+    <h2>Что-то пошло не по плану!</h2>
+    <p>Excel файл не сформирован.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body_block %}
+<link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
+<div class="scrollup float-right"><i class="fa fa-chevron-up"></i></div>
+
+<div class="jumbotron bg-cover"
+     style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%),
+                              url(https://placeimg.com/1500/480/tech)">
+    <h3>{{ industry_detail.title }}</h3>
+</div>
+
+<div class="container">
+    {% if user.is_authenticated %}
+    <form class="d-flex justify-content-center" action="{% url 'industry:success' %}" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" name="news_pk" value="{{ industry_detail.pk }}">
+        <input type="submit" class="btn btn-sm btn-outline-info text-dark" name="run_script" value="Скачать презентацию">
+    </form>
+    <br>
+    {% endif %}
+    <h5>Индекс производства по видам экономической деятельности</h5>
+    <table class="table table-bordered">
+      <thead class="thead-light">
+      {% for idh in index_head %}
+      {% if idh.pre_cur == '0' %}
+        <tr>
+          <th rowspan="2" scope="col" style="vertical-align: middle">Вид экономической деятельности</th>
+          <th colspan="2" scope="colgroup">{{ idh.month_year }}</th>
+        </tr>
+        <tr>
+          <th scope="col">{{ idh.pre_year }}</th>
+          <th scope="col">{{ idh.cur_year }}</th>
+        </tr>
+      {% else %}
+        <tr>
+          <th rowspan="2" scope="col" style="vertical-align: middle">Вид экономической деятельности</th>
+          <th colspan="2" scope="colgroup">{{ idh.month_year }}</th>
+          <th rowspan="2" scope="rowgroup" style="vertical-align: middle">{{ idh.pre_cur }}</th>
+        </tr>
+        <tr>
+          <th scope="col">{{ idh.pre_year }}</th>
+          <th scope="col">{{ idh.cur_year }}</th>
+        </tr>
+      {% endif %}
+      {% endfor %}
+      </thead>
+      <tbody>
+      {% for ix in index_list %}
+      {% if ix.pre_year_index == 0.0 %}
+        <tr>
+          <td>{{ ix.production_index }}</td>
+          <td>{{ ix.cur_year_index }}</td>
+          <td>{{ ix.pre_cur_index }}</td>
+      {% else %}
+        <tr>
+          <td>{{ ix.production_index }}</td>
+          <td>{{ ix.pre_year_index }}</td>
+          <td>{{ ix.cur_year_index }}</td>
+          <td>{{ ix.pre_cur_index }}</td>
+        </tr>
+      {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <p><small><sup>1)</sup> Индекс промышленного производства исчисляется по видам деятельности
+        «Добыча полезных ископаемых», «Обрабатывающие производства»,
+        «Обеспечение электрической энергией, газом и паром; кондиционирование воздуха»,
+        «Водоснабжение; водоотведение, организация сбора и утилизации отходов, деятельность по ликвидации загрязнений»
+        на основе данных о динамике производства важнейших товаров-представителей (в натуральном или стоимостном выражении).
+        В качестве весов используется структура валовой добавленной стоимости по видам экономической деятельности
+        {% if industry_detail.pub_date.year < 2020 %}
+            2010
+        {% else %}
+            2018
+        {% endif %}
+        базисного года.</small>
+    </p>
+    <hr class="my-4">
+    <br>
+    <h5>Производство основных видов промышленной продукции</h5>
+    <table class="table table-bordered">
+      <thead class="thead-light">
+      {% for ph in production_head %}
+        <tr>
+          <th scope="col" style="vertical-align: middle">Вид промышленной продукции</th>
+          <th scope="col" style="vertical-align: middle">{{ ph.cur_year }}</th>
+          <th scope="col">{{ ph.pre_cur }}</th>
+        </tr>
+      {% endfor %}
+      </thead>
+      <tbody>
+      {% for pr in production_list %}
+        <tr>
+          <td>{{ pr.industry_production }}</td>
+        {% if pr.cur_year_production == 0.0 %}
+          <td>...<small><sup>1)</sup></small></td>
+        {% else %}
+          <td>{{ pr.cur_year_production }}</td>
+        {% endif %}
+          <td>{{ pr.pre_cur_production }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p><small><sup>1)</sup> Данные не публикуются в целях обеспечения конфиденциальности первичных статистических данных, полученных от организаций, в соответствии с Федеральным законом от 29.11.2007 № 282-ФЗ "Об официальном статистическом учете и системе государственной статистики в Российской Федерации" (ст.4, п.5; ст.9, п.1).</small></p>
+    <hr class="my-4">
+  {% if industry_detail.href == '# URL недоступен' %}
+    <p>Данные получены с сайта
+        <a href="https://arhangelskstat.gks.ru/">Управления Федеральной службы государственной статистики по Архангельской области и Ненецкому автономному округу</a
+    </p>
+  {% else %}
+    <p>Ссылка на источник:
+        <a href="{{ industry_detail.href }}">{{ industry_detail.href }}</a>
+    </p>
+    <p>Дата опубликования: {{ industry_detail.pub_date|date:"d.m.Y" }}</p>
+  {% endif %}
+</div>
+
+
+{% endblock %}

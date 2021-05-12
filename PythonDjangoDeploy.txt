@@ -1,0 +1,305 @@
+Python Django Deploy
+
+--------------------------------------------
+Git
+---
+
+1. На GitHub.com создаем пустой репозиторий без каких-либо опций. 
+	Примечание. Добавление .gitignore, README, лицензии инициализирует его, т.е. это уже не пустой репозиторий.
+2. В папке dfeproject из контекстного меню запускаем "Git Bash here"
+	$ echo "# dfeproject" >> README.md
+	$ echo "*.cmd" .gitignore (или заполняем через vi .gitignore)
+	$ git init
+	git add .
+	git commit -m "Init"
+	git remote add origin https://github.com/bylad/dfeproject.git
+	git push -u origin master
+
+Способ, когда репозиторий не пуст
+git clone https://github.com/bylad/dfeproject.git
+Появится каталог dfeproject, куда копируем наш проект
+git add .
+git commit -m "Add project"
+git push (отправляем изменения на гитхаб)
+	Git может выдать сообщение, что команда push не настроена по-умолчанию
+	Для настройки push, если требуется, пишем:
+	git config --global push.default simple	
+
+--------------------------------------------
+
+Ubuntu 20.04
+------------
+sudo apt update
+sudo apt upgrade
+sudo reboot
+sudo timedatectl set-timezone Europe/Moscow
+
+Брандмауэр
+sudo ufw app list
+sudo ufw allow OpenSSH
+sudo ufw status
+sudo ufw enable
+sudo reboot
+
+1: Установка зависимостей
+sudo apt install python3-pip python3-dev libpq-dev postgresql postgresql-contrib nginx curl
+
+2: Создание базы данных и пользователя PostgreSQL
+	Windows 10 БД PostgreSQL
+	1) pgAdmin (сброс пароля)
+		- правим файл c:\Program Files\PostgreSQL\10\data\pg_hba.conf
+		В этом файле нужно найти такие строчки
+
+		# IPv4 local connections:
+		host all all 127.0.0.1/32 md5
+		host all all 0.0.0.0/0 md5
+		# IPv6 local connections:
+		host all all ::1/128 md5
+
+		Меняем md5 на trust.
+
+	2) Меняем пароль в pgAdmin (postgresql)
+
+		Запускаем pgAdmin и нам предлагается ввести пароль. Если отметить галочку сохранить, то пароль будет сохранен в  pgpass.conf и больше программой запрашиваться не будет.
+
+		Чтобы обеспечить безопасность использования паролей необходимо вернуть алгоритм шифрования md5. Для этого в файле pg_hba.conf параметр trust обратно меняем на md5.
+
+		Для подключения на локальном компьютере к PostgreSQL с помощью psql, pg_dump в локальных адресах  IPv4 127.0.0.1/32 и IPv6 ::1/128 значение trust нужно оставить.
+	3) psql замена кодировки (по умолч. 866): 
+		=>\! chcp 1251
+	4) Backup БД djangodfe
+		- cmd.exe
+		>d:
+		>cd <username>\Backup\djangodfe\
+		>pg_dump --host=localhost --username=<username> --dbname=djangodfe --file=djangodfe.sql
+		Полный путь к файлу d:\<username>\Backup\djangodfe\djangodfe.sql
+	5) Копирум backup на линуксовый сервер
+		- открываем Powershell (или cmd) в папке E:\Program Files\PuTTY
+		>.\pscp.exe d:\<username>\Backup\djangodfe\djangodfe.sql <user>@<ip_address>:/home/<user>
+	
+	Ubuntu 20.04 LTS
+	1) Создаем БД и пользователя
+		$ sudo -u postgres psql  # запускаем psql под пользователем по умолчанию postgres
+		postgres# create database djangodfe;
+		postgres# create user <username> with encrypted password 'mypass';
+		postgres# grant all privileges on database djangodfe to <username>;
+		postgres# \q
+	2) Восстанавливаем скопированную БД
+		$ psql -U <username> -d djangodfe < djangodfe.sql
+		Получил ошибку 
+			FATAL: Peer authentication failed for user "<username>"
+		Решение
+			- в файле pg_hba.conf заменяем peer на md5 в соответствующей строке
+				The problem is still your pg_hba.conf file (/etc/postgresql/12/main/pg_hba.conf*).
+				This line:
+					local   all             postgres                                peer
+				Should be:
+					local   all             postgres                                md5
+			- перезапускаем PostgreSQL
+				$ sudo service postgresql restart
+			- выполняем команду восстановления БД
+	3) Создаем скрипт обновления страниц
+		$ vi dfesite_update.sh
+		#!/bin/bash
+		/home/<user>/projects/dfeproject/venv/bin/python3 /home/<user>/projects/dfeproject/dfesite/manage.py fillstatindustry && /home/<user>/projects/dfeproject/venv/bin/python3 /home/<user>/projects/dfeproject/dfesite/manage.py fillstatprice && /home/<user>/projects/dfeproject/venv/bin/python3 /home/<user>/projects/dfeproject/dfesite/manage.py fillstat<user>lary && /home/<user>/projects/dfeproject/venv/bin/python3 /home/<user>/projects/dfeproject/dfesite/manage.py fillrate
+		$ chmod +x dfesite_update.sh
+
+3: Git
+	$ sudo apt install git
+	$ git config --global user.name "your_name"  # имя не относится к нику Github
+	$ git config --global user.email "your_email@youremail.com"
+	
+	При выполнении команды 	$ git clone https://github.com/... 
+	Появляется ошибка 		fatal: unable to access
+	Ошибка связана с тем, что в firewall у нас включен только OpenSSH. Поэтому клонирование необходимо выполнить по ssh.
+	
+	SSH-key
+	1) $ ssh-keygen -t r<user> -C "your_email@youremail.com"
+		After hitting Enter, the terminal will <user>y: 
+		'Generating public/private r<user> ket pair. 
+		Enter file in which to <user>ve the key(/Home/ubuntu/.ssh/id_rsa):' 
+		please press only enter and the terminal will ask to enter a passphrase.
+		Enter a suitable passphrase which is > 4 characters. 
+		
+	2) $ cd ~/.ssh
+	3) Add the SSH-key to github, type in the terminal:
+		$ gedit id_rsa.pub
+		Ubuntu will open a file, copy it's entire content:
+			- Open the github site and login.
+			- Go to "Account Settings" (in the upper right corner from your page).
+			- Click: "SSH Keys"
+			- Click: "Add another public key"
+			- Paste the copied content into the "key field" and press "Add key"
+
+	4) 	$ eval `ssh-agent -s`
+		$ ssh-add
+		# при установленном пароле часто запрашивается
+	
+	Gighub clone
+		$ cd ~/projects
+		$ git clone git@github.com:bylad/dfeproject.git
+	
+4: Python 
+	Python Virtual Environment
+	$ sudo -H pip3 install --upgrade pip
+	$ sudo -H pip3 install virtualenv
+	$ cd ~/projects/dfeproject
+	$ virtualenv venv
+	$ source venv/bin/activate
+	$ cd dfesite
+	
+	Установка из файл requirements.txt
+	$ vi requirements.txt  # удаляем модули, отсутствующие в linux:
+		- pypiwin32
+		- pywin32	
+	$ pip install -r requirements.txt
+	
+	Запуск dfesite
+	$ vi dfesite/settings.py
+		- добавляем IP адрес сервера в ALLOWED_HOSTS
+		- меняем в DATABASES
+			'ENGINGE': 'django.db.backends.postgresql_psycopg2',
+		
+		Решаем ошибку подгрузки CSS в админку Django
+		- STATIC_DIR переименовываем в STATIC_ROOT
+		- STATIC_DIR удаляем из STATICFILES_DIRS
+		- $ ./manage.py collectstatic
+		
+	$ chomd +x manage.py
+	$ ./manage.py makemigrations
+	Ошибка win32com. Модуль используется при конвертации doc в docx
+	
+	Решение конвертации doc в docx ОС Ubuntu
+		$ sudo apt install libreoffice-core libreoffice-writer libreoffice-java-common --no-install-recommends	
+		$ sudo apt install default-jre
+		Меняем функции doc2docx в файлах industry/fill_stat_news.py, price/class_filehandle.py
+			- удаляем строки между try except и с win32...
+			- между try except добавляем 2 строки
+				os.chdir(basedir)  # в классе вместо basedir указываем self.directory
+				subprocess.call(['lowriter', '--convert-to', 'docx', file_path])
+		Примечание. Установка libreoffice-java-common и default-jre позволяет избежать предупреждения <javaldx: Could not find a Java Runtime Environment> при вызове subprocess.		
+	
+	$ ./manage.py makemigrations
+	$ ./manage.py migrate
+	$ sudo ufw allow 8000
+	
+	Проверяем работоспособность приложений Django
+	$ ./manage.py runserver 0.0.0.0:8000
+
+5: Настраиваем Gunicorn
+	Проверяем службу Gunicorn открытием страницы http://<ip_address>:8000/ после команды:
+	$ gunicorn --bind 0.0.0.0:8000 dfesite.wsgi
+	$ deactivate  # отключаем виртуальное окружение Python
+	
+	Создание systemd gunicorn.socket и gunicorn.service
+	/etc/systemd/system/gunicorn.socket
+		[Unit]
+		Description=gunicorn socket
+
+		[Socket]
+		ListenStream=/run/gunicorn.sock
+
+		[Install]
+		WantedBy=sockets.target
+
+	/etc/systemd/system/gunicorn.service
+		[Unit]
+		Description=gunicorn daemon
+		Requires=gunicorn.socket
+		After=network.target
+
+		[Service]
+		User=<user>
+		Group=www-data
+		WorkingDirectory=/home/<user>/myprojectdir
+		ExecStart=/home/<user>/myprojectdir/myprojectenv/bin/gunicorn \
+				  --access-logfile - \
+				  --chdir /home/<user>/projects/dfeproject/dfesite \
+				  --workers 3 \
+				  --bind unix:/run/gunicorn.sock \
+				  dfesite.wsgi:application
+
+		[Install]
+		WantedBy=multi-user.target
+	
+	$ sudo systemctl start gunicorn.socket
+	$ sudo systemctl enable gunicorn.socket
+	
+	Проверка gunicorn.socket
+	$ sudo systemctl status gunicorn.socket
+	Проверка наличия файла gunicorn.sock
+	$ file /run/gunicorn.sock
+	При ошибке gunicorn.socket проверяем журнал
+	$ sudo journalctl -u gunicorn.socket
+	Проверка активации сокета
+	$ sudo systemctl status gunicorn
+	Для проверки отправляем подключение к сокету через curl
+	$ curl --unix-socket /run/gunicorn.sock localhost
+	
+	При проверке curl появилась ошибка запуска gunicorn.service
+	Django: ImproperlyConfigured: The SECRET_KEY setting must not be empty
+	Решение.
+	1) создаем файл local.py (вместо переменных окружения)
+		$ vi /home/<user>/projects/dfeproject/dfesite/dfesite/local.py
+		sec_key = "..."
+		db_user = "<username>"
+		db_pass = "<password>"
+	2) редактируем settings.py
+		$ vi /home/<user>/projects/dfeproject/dfesite/dfesite/settings.py
+		- from .local import *  # импортируем все из local.py
+		- SECRET_KEY = sec_key  # присваиваем
+		- 'USER': db_user,		# меняем в DATABASES
+		- 'PASSWORD': db_pass,	# меняем в DATABASES
+	3) перезапускаем службу gunicorn
+		$ sudo systemctl daemon-reload
+		$ sudo systemctl restart gunicorn
+
+6: Конфигурируем Nginx
+	У каталога с проектом меняем групповой доступ www-data
+	$ sudo chgrp -R www-data ~/projects/dfeproject
+	
+	Создаем и открываем новый серверный блок в Nginx
+	$ sudo nano /etc/nginx/sites-available/dfeproject
+		server {
+			listen 80;
+			server_name <domain_name>;
+
+			location = /favicon.ico { access_log off; log_not_found off; }
+			location /static/ {
+				root /home/<user>/projects/dfeproject/dfesite;
+			}
+
+			location / {
+				include proxy_params;
+				proxy_pass http://unix:/run/gunicorn.sock;
+			}
+		}
+	
+	Включаем файл через ссылку
+	$ sudo ln -s /etc/nginx/sites-available/dfeproject /etc/nginx/sites-enabled
+
+	Проверяем конфигурацию nginx
+	$ sudo nginx -t
+	
+	Перезапускаем Nginx
+	# sudo systemctl restart nginx
+	
+	Перенастраиваем файервол
+	$ sudo ufw delete allow 8000
+	$ sudo ufw allow 'Nginx Full'
+
+7: Настраиваем cron
+	$ sudo apt install cron
+	$ sudo systemctl enable cron
+	$ crontab -e
+	0 22 /home/<user>/dfesite_update.sh
+
+8: Настраиваем обновление данных сайта
+	Для этого требуется перезапуск службы gunicorn с правами root или через sudo.
+	Добавляем беспарольный доступ к службе через sudo
+	$ sudo vi /etc/sudoers.d/user_name
+	user_name ALL=(ALL) NOPASSWD: /usr/sbin service gunicorn start,/usr/sbin service gunicorn stop,/usr/sbin service gunicorn restart
+	
+	Добавляем перезапуск в скрипт dfesite_update.sh, для этого в конец строки дописываем:
+	&& sudo /usr/sbin service gunicorn restart
+	

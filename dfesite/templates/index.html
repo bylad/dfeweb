@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% block body_block%}
+<link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
+<div class="scrollup float-right"><i class="fa fa-chevron-up"></i></div>
+
+<div class="jumbotron bg-cover" style="background-image: url(/static/images/finec.jpg)">
+<!--     style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%),-->
+<!--                              url(https://placeimg.com/1500/480/tech)">-->
+    <h2>Департамент финансов и экономики
+        <br>Ненецкого автономного округа
+    </h2>
+</div>
+    <div class="container">
+      <div id="carouselExampleCaptions" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+          <li data-target="#carouselExampleCaptions" data-slide-to="0" class="active"></li>
+          <li data-target="#carouselExampleCaptions" data-slide-to="1"></li>
+          <li data-target="#carouselExampleCaptions" data-slide-to="2"></li>
+        </ol>
+        <div class="carousel-inner">
+          <div class="carousel-item active">
+            <a href="{% url 'industry:list' %}"><img src="{% static 'images/tek.jpg' %}" class="rounded mx-auto d-block w-75" alt="Industry"></a>
+            <div class="carousel-caption d-none d-md-block">
+              <h5>О промышленном производстве</h5>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <a href="{% url 'price:list' %}"><img src="{% static 'images/price.jpg' %}" class="rounded mx-auto d-block w-75" alt="Price"></a>
+            <div class="carousel-caption d-none d-md-block">
+              <h5>Средние цены</h5>
+            </div>
+          </div>
+          <div class="carousel-item">
+            <a href="{% url 'salary:list' %}"><img src="{% static 'images/salary.jpg' %}" class="rounded mx-auto d-block w-75" alt="Salary"></a>
+            <div class="carousel-caption d-none d-md-block">
+              <h5>Среднемесячная заработная плата</h5>
+            </div>
+          </div>
+        </div>
+        <a class="carousel-control-prev" href="#carouselExampleCaptions" role="button" data-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#carouselExampleCaptions" role="button" data-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="sr-only">Next</span>
+        </a>
+      </div>
+        <br>
+        <hr class="my-4">
+        <p class="lead">
+            Департамент финансов и экономики является исполнительным органом
+            государственной власти Ненецкого автономного округа, осуществляющим функции
+            по нормативному правовому регулированию и реализации государственной политики в финансовой, бюджетной
+            и налоговой сферах, в сфере туризма, в области стратегического планирования, анализа и прогнозирования
+            социально-экономического развития, формирования и исполнения государственных программ, развития малого
+            и среднего предпринимательства, инвестиционной деятельности и государственно-частного партнерства,
+            административной реформы в органах исполнительной власти Ненецкого автономного округа.
+        </p>
+    </div>
+
+{%endblock%}

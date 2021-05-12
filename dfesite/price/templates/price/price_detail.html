@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load mathfilters %}
+{% block body_block %}
+<link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
+<div class="scrollup float-right"><i class="fa fa-chevron-up"></i></div>
+
+<div class="jumbotron bg-cover"
+     style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%),
+                              url(https://placeimg.com/1500/480/tech)">
+    <h3>{{ price_detail.title }}</h3>
+</div>
+<div class="container">
+    {% if user.is_authenticated %}
+    <form class="d-flex justify-content-center" action="{% url 'price:success' %}" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" name="news_pk" value="{{ price_detail.pk }}">
+        <input type="hidden" name="pet_pk" value="{{ petrol_detail.pk }}">
+        <input type="hidden" name="previous_news_pk" value="{{ price_detail.pk }}">
+        <input type="hidden" name="previous_pet_pk" value="{{ petrol_detail.pk }}">
+        <input type="submit" class="btn btn-sm btn-outline-info text-dark" value="Скачать презентацию">
+    </form>
+    <br>
+    {% endif %}
+
+    <div id="table1" class="container-fluid">
+        <h5>Цены на бензин и дизельное топливо<sup><small>1)</small></sup></h5>
+        <table class="table table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Топливо</th>
+                    <th>Цена, рублей</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for t in petrol_list %}
+                <tr>
+                    <td>{{ t.petrol }}</td>
+                    <td>{{ t.price|floatformat:2 }}</td>
+                <tr>
+            {% endfor %}
+                <tr></tr>
+            </tbody>
+
+        </table>
+
+        <p><small><sup>1)</sup> По выборочному кругу автозаправочных станций.</small>
+        </p>
+        <br>
+
+        <h5>Средние  цены на отдельные потребительские товары (услуги)</h5>
+        <table class="table table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Наименование товара (услуги)</th>
+                    <th>Средние цены, рублей</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for ix in price_list %}
+                <tr>
+                {% if ix.product != '' %}
+                    {% if 'Услуги по снабжению' in ix.product %}
+                        <td>{{ ix.product }}</td>
+                        <td>{{ ix.price|div:100|floatformat:2 }}</td>
+                    {% else %}
+                        <td>{{ ix.product }}</td>
+                        <td>{{ ix.price|floatformat:2 }}</td>
+                    {% endif %}
+                {% endif %}
+                <tr>
+            {% endfor %}
+                <tr></tr>
+            </tbody>
+        </table>
+
+    </div>
+    <br>
+    <p>Данные получены с сайта
+        <a href="https://arhangelskstat.gks.ru/">Управления Федеральной службы государственной статистики по Архангельской области и Ненецкому автономному округу</a
+    </p>
+</div>
+{% endblock%}
