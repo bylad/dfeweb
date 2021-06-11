@@ -234,13 +234,13 @@ def search_news(idx, page, news_text):
 
 def mid_news(news_num, page):
     """
-    Поиск новости 'Средние цены и их изменение на отдельные потребительские товары'
+    Поиск новости 'Средние цены и их изменение на отдельные потребительские товары' по вхождению слова 'потребительские'
     с индексом (news_num) на веб странице 'https://arhangelskstat.gks.ru/news?page=' + str(page)
     Добавление найденных данных в БД
     Возвращает количество найденных новостей на странице
     0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
     """
-    newsdata = search_news(news_num, page, 'Средние цены и их изменение на отдельные потребительские товары')
+    newsdata = search_news(news_num, page, 'потребительские')
     all_news = PriceNews.objects.all().order_by('-pub_date')
     for news in all_news:  # добавлена проверка, т.к. на сайте статистики м.б. ошибочная дата в заголовке
         if news.title == newsdata[1] and news.pub_date != newsdata[3]:
