@@ -116,7 +116,7 @@ class ChartView(TemplateView):
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=xm_data, y=zm_data, mode='lines', name='Нефть', opacity=0.8))
     fig.add_trace(go.Scatter(x=xm_data, y=ym_data, mode='lines', name='USD', opacity=0.8))
-    fig.update_layout(title='Динамика курса доллара и нефти мари "Юралс"')
+    fig.update_layout(title='Динамика курса доллара и нефти марки "Юралс"')
     plot_divm = plot(fig, output_type='div')
     extra_context = {'da': daily, 'plot_div': plot_div, 'plot_divm': plot_divm}
 
