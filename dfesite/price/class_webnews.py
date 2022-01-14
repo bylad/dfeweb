@@ -1,8 +1,10 @@
 import os
-import re, requests
+import re
+import requests
+
 from bs4 import BeautifulSoup
-from transliterate import translit
 from dateparser import parse
+from transliterate import translit
 
 
 class NewsLocate:
@@ -18,7 +20,6 @@ class NewsStat(NewsLocate):
         super().__init__(*args, **kwargs)
         all_a = self.soup.findAll('a', text=re.compile(txt))
         self.acount = len(all_a)
-        # print(f"tag A count = {self.acount}")
         if self.acount == 0:
             self.atag = None
         else:
@@ -64,7 +65,7 @@ class NewsUrals(NewsLocate):
 
     def get_pub_date(self):
         try:
-            news_date = translit(self.atag.find(class_='e-date').text,'ru')
+            news_date = translit(self.atag.find(class_='e-date').text, 'ru')
         except AttributeError:
             news_date = '9 сентября 1999'
             print("Attribute Error! News date was dropped!")
@@ -78,3 +79,42 @@ class NewsUralsDetail(NewsLocate):
 
     def get_price(self):
         return float(re.sub(',', '.', self.price_str))
+
+class PopulationStat(NewsLocate):
+    def __init__(self, idx, txt, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        all_divs = self.soup.findAll('div', attrs={"class": "document-list__item"})
+        div_list = create_mydiv_list(all_divs, txt)
+        self.div_count = len(div_list)
+        if self.div_count == 0:
+            self.div_tag = None
+        else:
+            self.div_tag = div_list[idx]
+
+    def get_title(self):
+        return self.div_tag.findChild('div', attrs={"class": "document-list__item-title"}).text.strip()
+
+    def get_href(self):
+        return self.div_tag.findChild('a').get('href')
+
+    def get_pub_date(self):
+        try:
+            pub_text = self.div_tag.findChild(class_='document-list__item-info').text
+            pub_date = re.search(r'(\d{2}.\d{2}.\d{4})', pub_text).group()
+        except AttributeError:
+            pub_date = '9 сентября 1999'
+            print("Attribute Error! News date was dropped!")
+        return parse(pub_date)
+
+def create_mydiv_list(alldivs, find_string):
+    mydiv_list = []
+    for div in alldivs:
+        try:
+            if find_string in div.findChild('div', attrs={"class": "document-list__item-title"}).text:
+                mydiv_list.append(div)
+        except Exception as e:
+            if hasattr(e, 'message'):
+                print("Exception's message:", e.message)
+            else:
+                print('Exception:', e)
+    return mydiv_list

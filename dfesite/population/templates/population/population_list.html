@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block body_block %}
+<div class="jumbotron bg-cover"
+     style="background-image: url(/static/images/stat_population.jpg)">
+    <h2>О населении
+        <br>в Ненецком автономном округе</h2>
+</div>
+<div class="container">
+    <div id="table1" class="container-fluid">
+    <h3>Статистические данные</h3>
+    {% for migr in population_list %}
+       <a href="{{ migr.id }}" class="list-group-item list-group-item-action ">{{ migr.migration_title }}</a>
+    {% endfor %}
+        <p>
+        <nav aria-label="Page navigation example">
+            <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">предыдущая</a></li>
+            {% endif %}
+
+                <span class="page-link current text-dark">
+                    Стр. {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                </span>
+
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">следующая</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
+            {% endif %}
+            </ul>
+        </nav>
+        </p>
+    </div>
+
+    <table class="table table-bordered">
+    </table>
+    </div>
+</div>
+{% endblock%}

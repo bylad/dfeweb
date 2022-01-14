@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load mathfilters %}
+{% block body_block %}
+<link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
+<div class="scrollup float-right"><i class="fa fa-chevron-up"></i></div>
+
+<div class="jumbotron bg-cover"
+     style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%),
+                              url(https://placeimg.com/1500/480/tech)">
+    <h3>Население в Ненецком автономном округе {{ migr_titledate }}</h3>
+</div>
+<div class="container">
+    {% if user.is_authenticated %}
+    <form class="d-flex justify-content-center" action="{% url 'population:success' %}" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" name="migr_pk" value="{{ migr_detail.pk }}">
+        <input type="hidden" name="zags_pk" value="{{ zags_detail.pk }}">
+        <input type="submit" class="btn btn-sm btn-outline-info text-dark" value="Скачать презентацию">
+    </form>
+    <br>
+    {% endif %}
+
+    <div id="table1" class="container-fluid">
+        <h5>О числе прибывших, выбывших и  миграционном приросте (убыли)</h5>
+        <table class="table table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Число прибывших</th>
+                    <th>Число выбывших</th>
+                    <th>Миграционный прирост, (-) убыль</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for migr in migr_list %}
+                <tr>
+                    <td>{{ migr.arrived }}</td>
+                    <td>{{ migr.departed }}</td>
+                    <td>{{ migr.gain }}</td>
+                <tr>
+            {% endfor %}
+                <tr></tr>
+            </tbody>
+
+        </table>
+
+        <br>
+
+        <h5>О числе зарегистрированных родившихся, умерших, браках и разводах<sup><small>1)</small></sup></h5>
+        <table class="table table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Число родившихся</th>
+                    <th>Число умерших</th>
+                    <th>Число браков</th>
+                    <th>Число разводов</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for zags in zags_list reversed %}
+                <tr>
+                    <td>{{ zags.born }}</td>
+                    <td>{{ zags.died }}</td>
+                    <td>{{ zags.wedd }}</td>
+                    <td>{{ zags.divorce }}</td>
+                <tr>
+            {% endfor %}
+                <tr></tr>
+            </tbody>
+        </table>
+
+    </div>
+    <br>
+    <p><small><sup>1)</sup>Информация формируется на основе данных из Единого государственного реестра записей актов гражданского состояния (ЕГР ЗАГС).</small>
+    </p>
+
+    <hr class="my-4">
+
+    <p>Данные получены с сайта
+        <a href="https://arhangelskstat.gks.ru/population111">Управления Федеральной службы государственной статистики по Архангельской области и Ненецкому автономному округу</a
+    </p>
+</div>
+{% endblock%}

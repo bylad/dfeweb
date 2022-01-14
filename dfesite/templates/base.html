@@ -3,9 +3,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ДФЭ НАО</title>
-    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <title>ДФЭ</title>
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type = "image/x-icon">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
     <!--    Bootstrap Font Awesome Icons (replace glyphicon)-->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
@@ -32,8 +32,11 @@
                           <a class="dropdown-item text-light" href="{% url 'industry:list' %}">Промышленное производство</a>
                           <a class="dropdown-item text-light" href="{% url 'price:list' %}">Средние цены</a>
                           <a class="dropdown-item text-light" href="{% url 'salary:list' %}">Среднемесячная зарплата</a>
+                          <a class="dropdown-item text-light" href="{% url 'population:list' %}">О населении округа</a>
                         </div>
                     </li>
+                    {% if user.is_authenticated %}
+                    {% endif %}
                 </ul>
                 <ul class="navbar-nav navbar-right" id="right-side">
                     {% if user.is_authenticated %}
