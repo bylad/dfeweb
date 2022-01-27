@@ -9,23 +9,17 @@ from bs4 import BeautifulSoup
 
 # from django.db import transaction
 from django.conf import settings # correct way for access BASE_DIR, MEDIA_DIR...
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dfesite.settings')
-# import django
-# django.setup()
 
 from price.class_webnews import NewsStat, NewsStatDetail
 from price.class_filehandle import WebFile, DocxFile
 from industry import send_msg
 from salary.models import SalaryNews, Salary, SalaryHead
+from dfesite.constants import HEADER
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 MEDIA = settings.MEDIA_DIR
-
-HEADER = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
-          AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 \
-          Safari/537.36'}
 
 
 # Функции добавления в БД

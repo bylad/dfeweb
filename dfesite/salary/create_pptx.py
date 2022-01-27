@@ -5,14 +5,9 @@ from pptx.dml.color import RGBColor
 from pptx.util import Pt
 
 from django.conf import settings
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dfesite.settings')
-# import django
-# django.setup()
-
+from dfesite.constants import MONTH
 
 MEDIA = settings.MEDIA_DIR
-MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль',
-          'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь']
 
 
 def shape_upd(txt_frame, text, fontsize, bold=1):
@@ -63,11 +58,11 @@ def new_pptx(title_date, cur_list, prev_list):
     date4filename = f"{title_date.year}_01-{str(title_date.month).zfill(2)}"
     regex = re.compile('[яфмаисонд][а-я]+[ьтй]\s*[-]\s*[яфмаисонд][а-я]+[ьтй]\s+\d{4}\s+года?')
     if title_date.month == 1:  # за январь 2020 года
-        news_date_text = f"{MONTHS[0]} {title_date.year} года"
+        news_date_text = f"{MONTH[0]} {title_date.year} года"
     elif title_date.month ==12:  # за 2020 год
         news_date_text = f"{title_date.year} год"
     else:
-        news_date_text = f"январь-{MONTHS[title_date.month-1]} {title_date.year} года"
+        news_date_text = f"январь-{MONTH[title_date.month-1]} {title_date.year} года"
 
     for slide in prs.slides:
         for sh in slide.shapes:

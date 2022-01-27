@@ -37,7 +37,13 @@
                 <tr>
                     <td>{{ migr.arrived }}</td>
                     <td>{{ migr.departed }}</td>
+                {% if migr.gain > 0 %}    
+                    <td>{{ migr.gain }} <span style='color:green'>&#129153;</span></td>
+                {% elif migr.gain == 0 %}    
                     <td>{{ migr.gain }}</td>
+                {% else %}    
+                    <td>{{ migr.gain }} <span style='color:red'>&#129155;</span></td>
+                {% endif %}    
                 <tr>
             {% endfor %}
                 <tr></tr>
@@ -82,3 +88,7 @@
     </p>
 </div>
 {% endblock%}
+        title_date = cut_date(current_migrhead)
+        title_date = cut_date(current_migrhead)
+        title_date = cut_date(current_migrhead)
+        title_date = cut_date(current_migrhead)

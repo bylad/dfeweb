@@ -49,9 +49,10 @@ INSTALLED_APPS = [
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
     'mathfilters',
     'industry',
-    'population.apps.PopulationConfig',
+    'population',
     'price',
     'salary',
+    'subsidy',
     'rate',
 ]
 

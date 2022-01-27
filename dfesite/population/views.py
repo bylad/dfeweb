@@ -25,20 +25,17 @@ class PopulationDetailView(DetailView):
     template_name = 'population/population_detail.html'
 
     def get_context_data(self, **kwargs):
-        # context = super().get_context_data()
         all_zagshead = models.ZagsHead.objects.all()
         # Определяем id заголовка новости
         current_migrhead = self.model.objects.get(id=self.kwargs['pk'])
-        cm_date = current_migrhead.pub_date.date()
         current_zagshead = None
-        for i in range(len(all_zagshead)):
-            # print(f"current_migrhead.pub_date={current_migrhead.pub_date.date()}")
-            # print(f"all_zagshead[{i}].pub_date={all_zagshead[i].pub_date.date()}")
-            cz_date = all_zagshead[i].pub_date.date()
-            if cm_date.year == cz_date.year and cm_date.month == cz_date.month:
-                current_zagshead = all_zagshead[i]
-
         title_date = cut_date(current_migrhead)
+        for i in range(len(all_zagshead)):
+            zags_date = cut_date(all_zagshead[i].zags_title)
+            if title_date == zags_date:
+                current_zagshead = all_zagshead[i]
+                break
+
         if current_zagshead:
             context = {'migr_titledate': f" в {title_date[2]} {title_date[0]}",
                        'migr_detail': current_migrhead,

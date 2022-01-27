@@ -7,10 +7,9 @@ from pptx.util import Pt
 from pptx.enum.text import PP_PARAGRAPH_ALIGNMENT as PP_ALIGN
 
 from django.conf import settings
+from dfesite.constants import MONTH
 
 MEDIA = settings.MEDIA_DIR
-MONTH = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль',
-         'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь']
 
 
 def shape_upd(txt_frame, newtext, fontsize, align='LEFT'):

@@ -5,13 +5,10 @@ from pptx.dml.color import RGBColor
 from pptx.util import Pt
 
 from django.conf import settings
+from dfesite.constants import MONTHE, MONTH
 from . import fill_stat_news
 
 MEDIA = settings.MEDIA_DIR
-monthe = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле',
-          'августе', 'сентябре', 'октябре', 'ноябре', 'декабре']
-months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль',
-          'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь']
 
 def date_string(txt):
     """ Поиск по регулярному выражению.
@@ -44,13 +41,13 @@ def month_year(txt, d):
         fname_date = f'{str(d[0])}-01-12'
         return new_date, new_month, fname_date
     elif len(d) == 2:  # в заголовке указан год и январь
-        new_date = f'{monthe[d[1]-1]} {str(d[0])}'
-        new_month = f'{months[d[1]-1]} {str(d[0])} в %\n{months[d[1]-1]} {str(d[0]-1)} г.'
+        new_date = f'{MONTHE[d[1]-1]} {str(d[0])}'
+        new_month = f'{MONTH[d[1]-1]} {str(d[0])} в %\n{MONTH[d[1]-1]} {str(d[0]-1)} г.'
         fname_date = f'{str(d[0])}-01-01'
         return new_date, new_month, fname_date
     # в заголовке указан год и период с января по указанный месяц
-    new_date = f'{monthe[0]}-{monthe[d[2]-1]} {str(d[0])}'
-    new_month = f'{months[0][:3]}-{months[d[2]-1]} {str(d[0])} в %\n{months[0][:3]}-{months[d[2]-1]} {str(d[0]-1)} г.'
+    new_date = f'{MONTHE[0]}-{MONTHE[d[2]-1]} {str(d[0])}'
+    new_month = f'{MONTH[0][:3]}-{MONTH[d[2]-1]} {str(d[0])} в %\n{MONTH[0][:3]}-{MONTH[d[2]-1]} {str(d[0]-1)} г.'
     fname_date = f'{str(d[0])}-01-{"{:02d}".format(d[2])}'
 
     print('new_date, new_month, fname_date')

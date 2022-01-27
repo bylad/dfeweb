@@ -8,23 +8,17 @@ import docx
 from transliterate import translit
 
 from django.conf import settings # correct way for access BASE_DIR, MEDIA_DIR...
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dfesite.settings')
-# import django
-# django.setup()
+from dfesite.constants import HEADER, MONTH, MONTHE
 from .models import (IndustryNews, IndustryIndex, IndustryProduction, IndustryIndexHead, IndustryProductionHead)
 from . import  send_msg
 from django.db import transaction
 
 MEDIA = settings.MEDIA_DIR
-monthe = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле',
-          'августе', 'сентябре', 'октябре', 'ноябре', 'декабре']
-months = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль',
-          'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь']
 
 
 class NewsLocate:
-    def __init__(self, web, header, txt):
-        self.request = requests.get(web, headers=header)
+    def __init__(self, web, HEADER, txt):
+        self.request = requests.get(web, headers=HEADER)
         self.soup = BeautifulSoup(self.request.content, 'html.parser')
         self.atag = self.soup.find('a', text=re.compile(txt))
         if self.atag is not None:
@@ -38,9 +32,9 @@ class NewsLocate:
 
 
 class NewsDetail:
-    def __init__(self, web, header, txt):
+    def __init__(self, web, HEADER, txt):
         arh = 'https://arhangelskstat.gks.ru'
-        news_soup = BeautifulSoup(requests.get(web, headers=header).content, 'html.parser')
+        news_soup = BeautifulSoup(requests.get(web, headers=HEADER).content, 'html.parser')
         news_atag = news_soup.find('div', {'class': 'content'}).find('a', text=re.compile(txt))
         self.path, self.file_name = os.path.split(arh + news_atag.get('href'))
         self.file_href = requests.get(arh + news_atag.get('href'))
@@ -51,12 +45,12 @@ def date_int(newstitle):
         dig0-год, dig1-месяц1, dig2-месяц2
     """
     dig = [int(s) for s in newstitle.split() if s.isdigit()]
-    for string in monthe:
+    for string in MONTHE:
         regex = re.compile(string)
         match = re.search(regex, newstitle)
         if match:
             mesyac = newstitle[match.start():match.end()]
-            monthnum = '{:02}'.format(monthe.index(mesyac) + 1)
+            monthnum = '{:02}'.format(MONTHE.index(mesyac) + 1)
             dig.append(int(monthnum))
     return dig
 
@@ -124,7 +118,7 @@ def add_news(data_title, data_href, data_date):
     return current_news.id
 
 
-def add_table_index_head(ind, moye, pre, cur, precur):
+def add_table_index_HEADER(ind, moye, pre, cur, precur):
     IndustryIndexHead.objects.get_or_create(industrynews_id=ind,
                                             month_year=moye,
                                             pre_year=pre,
@@ -132,7 +126,7 @@ def add_table_index_head(ind, moye, pre, cur, precur):
                                             pre_cur=precur)
 
 
-def add_table_production_head(ind, cur, precur):
+def add_table_production_HEADER(ind, cur, precur):
     IndustryProductionHead.objects.get_or_create(industrynews_id=ind,
                                                  cur_year=cur,
                                                  pre_cur=precur)
@@ -159,7 +153,7 @@ def create_db(id_news, t1, t2, is_january):
     if is_january:  # В таблице с индексом для января используем 3 столбца, одну зануляем
         # Создание заголовков таблиц
         if t1[0][1] and t1[1][1] and t1[1][2]:
-            add_table_index_head(id_news, t1[0][1], t1[1][1], t1[1][2], 0)
+            add_table_index_HEADER(id_news, t1[0][1], t1[1][1], t1[1][2], 0)
         else:
             print(f'Внимание! Изменилась структура таблицы с индексом, проверьте ее заголовки.')
         # Создание в БД таблицы с индексом
@@ -172,7 +166,7 @@ def create_db(id_news, t1, t2, is_january):
                 add_table_index(id_news, t1[row][0], 0, t1[row][2], t1[row][3])
     else:  # Создание заголовков таблиц для остальных месяцев, используем 4 столбца
         if t1[0][1] and t1[1][1] and t1[1][2] and t1[1][3]:
-            add_table_index_head(id_news, t1[0][1], t1[1][1], t1[1][2], t1[1][3])
+            add_table_index_HEADER(id_news, t1[0][1], t1[1][1], t1[1][2], t1[1][3])
         else:
             print(f'Внимание! Изменилась структура таблицы с индексом, проверьте ее заголовки.')
         # Заполняем в БД тело таблицы с индексом
@@ -180,14 +174,14 @@ def create_db(id_news, t1, t2, is_january):
             add_table_index(id_news, t1[row][0], t1[row][1], t1[row][2], t1[row][3])
     # Заголовок и тело таблицы с производством
     if t2[0][1] and t2[0][2]:
-        add_table_production_head(id_news, t2[0][1], t2[0][2])
+        add_table_production_HEADER(id_news, t2[0][1], t2[0][2])
     else:
         print(f'Внимание! Изменилась структура таблицы с производством, проверьте ее заголовки.')
     for row in range(1, len(t2)):
         add_table_production(id_news, t2[row][0], t2[row][1], t2[row][2])
 
 
-def last_added_news(header):
+def last_added_news(HEADER):
     page = 1
     try:
         last_db_date = IndustryNews.objects.last().pub_date
@@ -195,7 +189,7 @@ def last_added_news(header):
         last_db_date = datetime.datetime(2019, 9, 16, 0, 0)
     while True:
         url = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
-        stat_news = NewsLocate(url, header, 'О промышленном производстве')
+        stat_news = NewsLocate(url, HEADER, 'О промышленном производстве')
         if stat_news.atag is not None:
             news_date = stat_news.publicated
             print(f'page={page}, site={news_date}, db={last_db_date}')
@@ -205,8 +199,8 @@ def last_added_news(header):
         page += 1
 
 
-def create_file(news, header, year):
-    news_item = NewsDetail(news.atag.get('href'), header, 'Ненецкому')
+def create_file(news, HEADER, year):
+    news_item = NewsDetail(news.atag.get('href'), HEADER, 'Ненецкому')
     dir_path = os.path.join(MEDIA, 'industry', f'{year}')
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
@@ -228,14 +222,12 @@ def create_file(news, header, year):
 
 @transaction.atomic
 def populate():
-    head = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
-            AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 \
-            Safari/537.36'}
-    page = last_added_news(head)
+    print("-----------------------INDUSTRY BEGIN--------------------------")
+    page = last_added_news(HEADER)
     while page > 0:
         print(f'industry.populate page={page}')
         url = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
-        stat = NewsLocate(url, head, 'О промышленном производстве')
+        stat = NewsLocate(url, HEADER, 'О промышленном производстве')
         # Если на текущей странице новость не найдена, то переходим к следующей
         if not stat.atag:
             page -= 1
@@ -246,8 +238,7 @@ def populate():
         title_date = date_int(a_title)
 
         # Заходим в новость, сохраняем файл (запоминаем файл docx и путь к нему)
-        docxfile, pwd = create_file(stat, head, str(title_date[0]))
-
+        docxfile, pwd = create_file(stat, HEADER, str(title_date[0])) 
         # Добавляем в БД, определяем id новости
         news_id = add_news(a_title, b_href, c_date)
 
@@ -264,8 +255,5 @@ def populate():
 
         page -= 1
         print('--------------------------------------------------------')
-
-#
-# if __name__ == "__main__":
-#     populate()
+    print("-----------------------INDUSTRY END--------------------------")
 

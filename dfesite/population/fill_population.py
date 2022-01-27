@@ -10,16 +10,12 @@ from price.class_webnews import PopulationStat
 from price.class_filehandle import WebFile, DocxFile
 from transliterate import translit
 
+from dfesite.constants import HEADER, MONTHE
 from industry import send_msg
 from population.models import MigrationHead, MigrationData, ZagsHead, ZagsData
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 MEDIA = settings.MEDIA_DIR
-HEADER = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
-          AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 \
-          Safari/537.36'}
-MONTHE = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле',
-          'августе', 'сентябре', 'октябре', 'ноябре', 'декабре']
 NAO = "Ненецкий автономный округ"
 SEARCH_MIGRATION = 'О числе прибывших, выбывших'
 SEARCH_ZAGS = 'О числе зарегистрированных родившихся'

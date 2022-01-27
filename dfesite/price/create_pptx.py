@@ -7,10 +7,9 @@ from pptx.enum.text import PP_ALIGN
 import dateparser
 
 from django.conf import settings
+from dfesite.constants import MONTHS
 
 MEDIA = settings.MEDIA_DIR
-MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля',
-          'августа', 'сентября', 'октября', 'ноября', 'декабря']
 
 def cut_date(txt):
     """

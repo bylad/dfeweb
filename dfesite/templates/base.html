@@ -32,7 +32,8 @@
                           <a class="dropdown-item text-light" href="{% url 'industry:list' %}">Промышленное производство</a>
                           <a class="dropdown-item text-light" href="{% url 'price:list' %}">Средние цены</a>
                           <a class="dropdown-item text-light" href="{% url 'salary:list' %}">Среднемесячная зарплата</a>
-                          <a class="dropdown-item text-light" href="{% url 'population:list' %}">О населении округа</a>
+                          <a class="dropdown-item text-light" href="{% url 'population:list' %}">Миграция, демография населения</a>
+                          <a class="dropdown-item text-light" href="{% url 'subsidy:list' %}">Субсидии, льготы по оплате ЖКХ</a>
                         </div>
                     </li>
                     {% if user.is_authenticated %}

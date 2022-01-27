@@ -9,27 +9,17 @@ from datetime import timedelta
 
 from django.db import transaction
 from django.conf import settings # correct way for access BASE_DIR, MEDIA_DIR...
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dfesite.settings')
-# import django
-# django.setup()
 
 from .class_webnews import NewsStat, NewsStatDetail
 from .class_filehandle import WebFile, DocxFile
 from .models import PriceNews, PriceData, PricePetrolHead, PricePetrolData
 from industry import send_msg
+from dfesite.constants import HEADER, MONTHS
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 MEDIA = settings.MEDIA_DIR
-
-MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля',
-          'августа', 'сентября', 'октября', 'ноября', 'декабря']
-
-HEADER = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
-          AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 \
-          Safari/537.36'}
-
 SEARCH_TXT1 = 'Ненецкий автономный округ'
 SEARCH_TXT2 = 'Нарьян-Мар'
 CUT_NM = ' и г.Нарьян-Мару'
