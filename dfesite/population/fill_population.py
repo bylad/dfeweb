@@ -90,14 +90,12 @@ def data_docx(doc):
 def add_migr(wwwdata, docdata):
     migrhead_id = add_migrhead(wwwdata[1], wwwdata[2], wwwdata[3].date())
     add_migrdata(migrhead_id, docdata[0], docdata[1], docdata[2])
-    print(f"Добавлены новые миграционные данные. Дата публикации: {wwwdata[3].date()}")
     return migrhead_id
 
 
 def add_zags(wwwdata, docdata):
     zagshead_id = add_zagshead(wwwdata[1], wwwdata[2], wwwdata[3].date())
     add_zagsdata(zagshead_id, docdata[0], docdata[1], docdata[2], docdata[3])
-    print(f"Добавлены новые данные из реестра ЗАГС. Дата публикации: {wwwdata[3].date()}")
 
 
 def putto_db(srch_txt):
@@ -106,8 +104,8 @@ def putto_db(srch_txt):
     """
     migrhead_pk = None
     try:
-        db_migrhead = MigrationHead.objects.all().order_by('-pub_date')
-        db_zagshead = ZagsHead.objects.all().order_by('-pub_date')
+        db_migrhead = MigrationHead.objects.all().order_by('pub_date')
+        db_zagshead = ZagsHead.objects.all().order_by('pub_date')
     except Exception as e:
         db_migrhead = None
         db_zagshead = None
@@ -119,34 +117,22 @@ def putto_db(srch_txt):
     info = search_webdata(0, srch_txt)  # находим количество искомого
     # [news_count, title, href, pub_date, file]
     if info:
-        search_count = info[0]
-        if db_migrhead and len(db_migrhead) == search_count:
-            return  # если количество на сайте совпадает с количеством в БД, то выходим без изменений
-        elif db_zagshead and len(db_zagshead) == search_count:
-            return  # если количество на сайте совпадает с количеством в БД, то выходим без изменений
-
-        while search_count >= 0:
-            search_count -= 1
-            webdata = search_webdata(search_count, srch_txt)
-            data_list = data_docx(webdata[4])
-            if srch_txt == SEARCH_MIGRATION and db_migrhead:  # если ищем мигр.данные и они есть в БД
-                for db in db_migrhead:
-                    if webdata[3] == db.pub_date:
-                        continue
-                    else:
-                        migrhead_pk = add_migr(webdata, data_list)  # добавляем миграционные данные в БД
-            elif srch_txt == SEARCH_ZAGS and db_zagshead:  # если ищем мигр.данные и они есть в БД
-                for db in db_zagshead:
-                    if webdata[3] == db.pub_date:
-                        continue
-                    else:  # добавляем данные из реестра ЗАГС в БД
-                        add_zags(webdata, data_list)
-            else:  # данных нет в БД
-                if len(data_list) == 3:  # добавляем миграционные данные в БД
-                    migrhead_pk = add_migr(webdata, data_list)
+        if db_migrhead.last().migration_title == info[1]:
+            return None
+        data_list = data_docx(info[4])
+        if srch_txt == SEARCH_MIGRATION and db_migrhead:  # если ищем мигр.данные и они есть в БД
+            for db in db_migrhead:
+                if info[3] == db.pub_date:
+                    continue
+                else:
+                    migrhead_pk = add_migr(info, data_list)  # добавляем миграционные данные в БД
+        elif srch_txt == SEARCH_ZAGS and db_zagshead:  # если ищем мигр.данные и они есть в БД
+            for db in db_zagshead:
+                if info[3] == db.pub_date:
+                    continue
                 else:  # добавляем данные из реестра ЗАГС в БД
-                    add_zags(webdata, data_list)
-        return migrhead_pk
+                    add_zags(info, data_list)
+    return migrhead_pk
 
 
 @transaction.atomic
@@ -161,6 +147,3 @@ def populate():
             send_msg.sending('population', current.id, current.migration_title)
     print("-----------------------POPULATION END--------------------------")
 
-
-# if __name__ == '__main__':
-#     populate()
