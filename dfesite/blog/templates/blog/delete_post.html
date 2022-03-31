@@ -1,0 +1,22 @@
+{% extends 'blog_base.html' %}
+{% load auth_extras %}
+{% block title %} Удаление {% endblock %}
+{% block blog_body %}
+    {% if user|has_group:"asfr" %}
+    <h1>Удаление статьи</h1>
+    <br><br>
+    <h3>Удалить: {{ post.title }} </h3>
+    <br>
+    <strong>Уверены?</strong>
+    <br>
+    <br>
+    <div class="form-group">
+        <form method="POST">
+            {% csrf_token %}
+            <button class="btn btn-secondary">Удалить статью!</button>
+        </form>
+    </div>
+    {% else %}
+    <br><br><h5>Удаление доступно только для администраторов.</h5><br><br>
+    {% endif %}
+{% endblock%}

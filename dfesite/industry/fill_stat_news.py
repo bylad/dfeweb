@@ -79,15 +79,16 @@ def table_doc(doc):
     for t in range(2):  # ранее использовали len(doc.tables), отказался, т.к. в подписи могут добавить еще таблицу
         table = doc.tables[t]
         table_columns = len(table.columns)
-        # В январе 2021г. 3 столбца
-        if t == 0 and table_columns != 4: # за январь видно 3 столбца, по факту 4 (объединены)
+        # В янв 2021г. 3 столбца, по факту 4 (объединены). В янв 2022 объединение удалено.
+        if t == 0:
+            if table_columns != 3 or table_columns != 4: 
+                print(f'Внимание! Изменилась структура таблицы, проверьте скачанный файл.')
+                print(f'Количество столбцов в таблице t[{t}] = {table_columns}.')
+            # os.system("pause")
+        elif t == 1 and table_columns != 3:
             print(f'Внимание! Изменилась структура таблицы, проверьте скачанный файл.')
             print(f'Количество столбцов в таблице t[{t}] = {table_columns}.')
-            os.system("pause")
-        if t == 1 and table_columns != 3:
-            print(f'Внимание! Изменилась структура таблицы, проверьте скачанный файл.')
-            print(f'Количество столбцов в таблице t[{t}] = {table_columns}.')
-            os.system("pause")
+            # os.system("pause")
 
         for i, row in enumerate(table.rows):
             text = (cell.text for cell in row.cells)
@@ -105,7 +106,7 @@ def floating(start, t):
     """
     for row in range(start, len(t)):
         for col in range(1, len(t[1])): # обработка со второго столбца
-            if t[row][col][:3] == '...':
+            if t[row][col][:3] == '...' or t[row][col].strip() == '-' or t[row][col].strip() == '':
                 t[row][col] = '0,0'
             t[row][col] = float(re.sub('[^0-9,]', "", t[row][col]).replace(",", "."))
     return t

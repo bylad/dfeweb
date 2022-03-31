@@ -1,0 +1,18 @@
+{% extends 'blog_base.html' %}
+{% load auth_extras %}
+{% block title %} Редактирование {% endblock %}
+{% block blog_body %}
+    {% if user|has_group:"asfr" %}
+    <h1>Редактировать статью</h1>
+    <div class="form-group">
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.media }}
+            {{ form.as_p }}
+            <button class="btn btn-secondary">Сохранить</button>
+        </form>
+    </div>
+    {% else %}
+    <br><br><h5>Редактирование доступно только для пользователей группы "asfr".</h5><br><br>
+    {% endif %}
+{% endblock %}

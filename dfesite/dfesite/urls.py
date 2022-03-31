@@ -30,4 +30,5 @@ urlpatterns = [
     path('rate/', include('rate.urls', namespace='rate')),
     path('population/', include('population.urls', namespace='population')),
     path('subsidy/', include('subsidy.urls', namespace='subsidy')),
+    path('blog/', include('blog.urls', namespace='blog')),
 ]

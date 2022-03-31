@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load auth_extras %}
+{% block title %} Блог автоматчиков {% endblock %}
+{% block body_block %}
+{% if request.user|has_group:"asfr" %}
+<div class="container">
+    <nav class="navbar navbar-expand-lg navbar-light bg-secondary">
+        <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
+            <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                {% if cat_menu %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-light" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Оглавление
+                    </a>
+                    <div class="dropdown-menu bg-secondary" aria-labelledby="navbarDropdown">
+                    {% for item in cat_menu %}
+                        <a class="dropdown-item text-light" href="{% url 'blog:category' item|slugify %}">{{ item }}</a>
+                    {% endfor %}
+                    </div>
+                </li>
+                {% endif %}
+                <form class="d-flex">
+                  <input class="form-control me-2 text-dark" type="search" placeholder="Найти..." aria-label="Search">
+                  <button class="btn btn-outline-success fa fa-search" type="submit"></button>
+                </form>
+            </ul>
+            <ul class="navbar-nav ml-auto text-center" id="right-side">
+                <li><a class="nav-link text-light" href="{% url 'blog:add_post' %}">Добавить статью</a></li>
+                <li><a class="nav-link text-light" href="{% url 'blog:add_category' %}">Добавить раздел</a></li>
+            </ul>
+        </div>
+        </nav>
+
+    {% block blog_body %}
+    {% endblock %}
+{% else %}
+    <br><br>
+    <h5>Страница недоступна</h5>
+    <br><br>
+</div>
+{% endif %}
+{% endblock%}

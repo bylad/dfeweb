@@ -100,7 +100,11 @@
         {% else %}
           <td>{{ pr.cur_year_production }}</td>
         {% endif %}
+        {% if pr.pre_cur_production == 0.0 %}
+          <td> - </td>
+        {% else %}
           <td>{{ pr.pre_cur_production }}</td>
+        {% endif %}
         </tr>
       {% endfor %}
       </tbody>

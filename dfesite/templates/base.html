@@ -39,14 +39,26 @@
                     {% if user.is_authenticated %}
                     {% endif %}
                 </ul>
+
                 <ul class="navbar-nav navbar-right" id="right-side">
                     {% if user.is_authenticated %}
-                    <li><a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Log Out</a></li>
-                    <li class="nav-link">Welcome: {{ user.username }}</li>
+                        {% ifequal user.groups.all.0.name "asfr" %}
+                        <li><a class="nav-link" href="{% url 'blog:posts' %}">Документация</a></li>
+                        {% endifequal  %}
+                        {% if '/blog' in request.path %}
+                        <li><a class="nav-link" href="{% url 'logout' %}">{{ user.username }} <i class="fa fa-sign-out"></i></a></li>
+                        {% else %}
+                        <li><a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">{{ user.username }} <i class="fa fa-sign-out"></i></a></li>
+                        {% endif %}
                     {% else %}
-                    <li><a class="navbar-nav navbar-right" href="{% url 'login' %}?next={{ request.path }}"><span class="fa fa-user"></span></a></li>
+                        {% if '/blog' in request.path %}
+                        <li><a class="navbar-nav navbar-right" href="{% url 'login' %}"><span class="fa fa-user"></span></a></li>
+                        {% else %}
+                        <li><a class="navbar-nav navbar-right" href="{% url 'login' %}?next={{ request.path }}"><span class="fa fa-user"></span></a></li>
+                        {% endif %}
                     {% endif %}
                 </ul>
+
             </div>
         </nav>
     </div>
