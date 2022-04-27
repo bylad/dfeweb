@@ -4,6 +4,7 @@
 *.un~
 local.py
 # Ignore folders and files 
+krista_report/
 venv/
 2018/
 2019/
