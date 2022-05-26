@@ -35,7 +35,8 @@ class NewsDetail:
     def __init__(self, web, HEADER, txt):
         arh = 'https://arhangelskstat.gks.ru'
         news_soup = BeautifulSoup(requests.get(web, headers=HEADER).content, 'html.parser')
-        news_atag = news_soup.find('div', {'class': 'content'}).find('a', text=re.compile(txt))
+        news_desc = news_soup.find('div', {'class': 'document-list__item-title'}, text=re.compile('Ненецкий')).parent
+        news_atag = news_desc.find_previous_sibling().find('a')
         self.path, self.file_name = os.path.split(arh + news_atag.get('href'))
         self.file_href = requests.get(arh + news_atag.get('href'))
 

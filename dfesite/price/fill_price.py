@@ -197,7 +197,7 @@ def search_news(idx, page, news_text):
     :param news_text: искомая новость
     :return: list[news_count, title, href, pub_date, file]
     """
-    nao = 'Ненецком'
+    nao = 'Ненецкий'
     app_dir = 'price'
     webpage = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
     news = []
@@ -207,8 +207,8 @@ def search_news(idx, page, news_text):
         news.append(stat.acount)
         news.append(stat.get_title())
         news.append(stat.get_href())
-        news.append(stat.get_pub_date())
         stat_detail = NewsStatDetail(nao, stat.get_href(), HEADER)
+        news.append(stat_detail.pub_date)
         year = re.findall(r'\d{4}', stat.get_title())[0]
         stat_file = WebFile(stat_detail.file_href, MEDIA, app_dir, year, stat_detail.file_name)
         stat_file.download_file()
@@ -429,7 +429,7 @@ def from_xlsm(path):
 def populate():
     page_num = 1
     print('============== price.populate ===============')
-    while page_num < 5:
+    while page_num < 3:
         print(f'page={page_num}')
         data_exist, mnews_id = from_web(page_num)
         if data_exist == 1:

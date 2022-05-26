@@ -1,8 +1,12 @@
 {% extends 'blog_base.html' %}
+{% load static %}
 {% load i18n mptt_tags %}
 {% load auth_extras %}
 {% block blog_body %}
     <ul class="list-group list-group-flush">
+    
+    <!--    <a href="{% static 'krista_report/Everyday.xlsx' %}" download>Отчет 02.02.01.12</a> -->
+
     {% for post in object_list %}
     <li class="list-group-item"><a href="{% url 'blog:article-detail' post.pk %}">{{ post.title }}</a>
 <!--        - <a href="{% url 'blog:category' post.category|slugify %}">{{ post.category }}</a> - {{ post.author }} - {{ post.post_date }} - -->

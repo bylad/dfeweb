@@ -47,9 +47,13 @@ class NewsStat(NewsLocate):
 class NewsStatDetail(NewsLocate):
     def __init__(self, txt, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        div_a = self.soup.find('div', {'class': 'content'}).find('a', text=re.compile(txt))
-        self.path, self.file_name = os.path.split(self.www + div_a.get('href'))
-        self.file_href = requests.get(self.www + div_a.get('href'))
+#        div_a = self.soup.find('div', {'class': 'content'}).find('a', text=re.compile(txt))
+        div_desc = self.soup.find('div', {'class': 'document-list__item-title'}, text=re.compile(txt)).parent
+        div_atag = div_desc.find_previous_sibling().find('a')
+        self.pub_date = parse(re.search(r'\d{2}.\d{2}.\d{4}', str(div_desc)).group(), date_formats=['%d.%m.%Y'])
+        
+        self.path, self.file_name = os.path.split(self.www + div_atag.get('href'))
+        self.file_href = requests.get(self.www + div_atag.get('href'))
 
 class NewsUrals(NewsLocate):
     def __init__(self, txt, *args, **kwargs):
