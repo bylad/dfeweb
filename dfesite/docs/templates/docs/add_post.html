@@ -1,6 +1,6 @@
-{% extends 'blog_base.html' %}
+{% extends 'docs_base.html' %}
 {% block title %} Создание новой статьи {% endblock %}
-{% block blog_body %}
+{% block docs_body %}
 <h1>Создание статьи</h1>
 <br><br>
 <div class="form-group">
@@ -9,7 +9,7 @@
     {{ form.text|safe }}
     {{ form.media }}
     {{ form.as_p }}
-    <button class="btn btn-secondary">Добавить</button>
+    <button class="btn btn-secondary" data-url="{% url 'docs:posts' %}">Сохранить</button>
 </form>
 </div>
 

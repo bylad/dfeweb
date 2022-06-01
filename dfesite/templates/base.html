@@ -3,17 +3,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ДФЭ</title>
+    <title>{% block title %}ДФЭ{% endblock %}</title>
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type = "image/x-icon">
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min_4.5.2.css' %}">
-    <!--    Bootstrap Font Awesome Icons (replace glyphicon)-->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <!--    Bootstrap Font Awesome Icons (replace glyphicon)
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous"> -->
     <link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
 </head>
 <body>
-    <div class="container-fluid">
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo03" aria-controls="navbarTogglerDemo03" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <a class="navbar-brand" href="http://dfei.adm-nao.ru/">
@@ -21,11 +22,11 @@
             </a>
 
             <div class="collapse navbar-collapse" id="navbarTogglerDemo03">
-                <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                <ul class="navbar-nav me-auto mt-2 mt-lg-0">
                     <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Главная</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'rate:daily_list' %}">Курс ЦБ</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                           Статистика
                         </a>
                         <div class="dropdown-menu bg-dark" aria-labelledby="navbarDropdown">
@@ -36,42 +37,35 @@
                           <a class="dropdown-item text-light" href="{% url 'subsidy:list' %}">Субсидии, льготы по оплате ЖКХ</a>
                         </div>
                     </li>
-                    {% if user.is_authenticated %}
-                    {% endif %}
                 </ul>
 
-                <ul class="navbar-nav navbar-right" id="right-side">
+                <ul class="navbar-nav d-flex">
                     {% if user.is_authenticated %}
                         {% ifequal user.groups.all.0.name "asfr" %}
-                        <li><a class="nav-link" href="{% url 'blog:posts' %}">Документация</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'docs:posts' %}">Документация</a></li>
                         {% endifequal  %}
-                        {% if '/blog' in request.path %}
-                        <li><a class="nav-link" href="{% url 'logout' %}">{{ user.username }} <i class="fa fa-sign-out"></i></a></li>
+                        {% if request.path == "/docs/" %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Выйти <i class="fa fa-sign-out"></i></a></li>
                         {% else %}
-                        <li><a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">{{ user.username }} <i class="fa fa-sign-out"></i></a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}?next={{ request.path }}">Выйти <i class="fa fa-sign-out"></i></a></li>
                         {% endif %}
                     {% else %}
-                        {% if '/blog' in request.path %}
-                        <li><a class="navbar-nav navbar-right" href="{% url 'login' %}"><span class="fa fa-user"></span></a></li>
+                        {% if request.path == "/docs/" %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}"><i class="fa fa-sign-in"> Войти</i></a></li>
                         {% else %}
-                        <li><a class="navbar-nav navbar-right" href="{% url 'login' %}?next={{ request.path }}"><span class="fa fa-user"></span></a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'login' %}?next={{ request.path }}"><i class="fa fa-sign-in"> Войти</i></a></li>
                         {% endif %}
                     {% endif %}
                 </ul>
-
             </div>
-        </nav>
-    </div>
+        </div>
+    </nav>
 
-    <div class="container-fluid">
-        {% block body_block %}
-        {% endblock %}
-    </div>
-    <div class="card-footer text-muted" align="center">
+    {% block body_block %}
+    {% endblock %}
+    <div class="card-footer text-muted bg-light py-2" align="center">
         Служба поддержки <a href="mailto:dfei@adm-nao.ru" class="text-muted">dfei@adm-nao.ru</a>
     </div>
 </body>
-<script type="text/javascript" src="{% static 'js/jquery.min_3.5.1.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/bootstrap.min_4.5.2.js' %}"></script>
-<script type="text/javascript" src="{% static 'js/myscript.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </html>

@@ -1,0 +1,69 @@
+{% extends 'docs_base.html' %}
+{% load i18n mptt_tags %}
+{% block docs_body %}
+<div class="container">
+    {% if cat.get_ancestors %}
+        {% for category in cat.get_ancestors %}
+            <a href="{% url 'docs:category' category.slug %}">{{ category|capfirst }}</a> >
+        {% endfor %}
+        <br>
+    {% endif %}
+    <h3>Раздел:  {{ cat.name|capfirst }}</h3>
+    <hr>
+
+{% if children %}
+    <div class="row">
+        <div class="col-3">
+            <div class="list-group list-group-flush">
+            {% for child in children %}
+                <a class="list-group-item" href="{% url 'docs:category' child.slug %}">{{ child.name|capfirst }}</a>
+            {% endfor %}
+            </div>
+        </div>
+        <div class="col-9">
+        {% if category_posts %}
+            <ul class="list-group list-group-flush">
+                {% for post in category_posts %}
+                <li class="list-group-item">
+                    <a href="{% url 'docs:article-detail' post.slug %}">{{ post.title }}</a><br/>
+                    <small>
+                        {{ post.author }}, {{ post.post_date|date:"d.m.Y" }} -
+                        <a href="{% url 'docs:update_post' post.slug %}">(Редактировать)</a>
+                        <a href="{% url 'docs:delete_post' post.slug %}">(Удалить)</a>
+                    </small>
+        <!--                    <br/>{{ post.snippet }}-->
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <h6>Страница в стадии наполнения</h6>
+            <br/>
+        {% endif %}
+        </div>
+    </div>
+{% else %}
+    {% if category_posts %}
+        <ul class="list-group list-group-flush">
+            {% for post in category_posts %}
+            <li class="list-group-item">
+                <a href="{% url 'docs:article-detail' post.slug %}">{{ post.title }}</a><br/>
+                <small>
+                    {{ post.author }}, {{ post.post_date|date:"d.m.Y" }} -
+                    <a href="{% url 'docs:update_post' post.slug %}">(Редактировать)</a>
+                    <a href="{% url 'docs:delete_post' post.slug %}">(Удалить)</a>
+                </small>
+    <!--                    <br/>{{ post.snippet }}-->
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <br/>
+        <h6>Страница в стадии наполнения</h6>
+        <br/>
+    {% endif %}
+
+{% endif %}
+
+
+</div>
+{% endblock%}

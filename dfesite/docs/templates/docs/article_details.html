@@ -1,0 +1,52 @@
+{% extends 'docs_base.html' %}
+{% block title %} {{ docspost.title_tag }} {% endblock %}
+{% load i18n mptt_tags %}
+{% load auth_extras %}
+{% block docs_body %}
+<div class="row">
+    <div class="col-9">
+        {% for category in docspost.category.get_ancestors %}
+        <a href="{% url 'docs:category' category.slug %}">{{ category|capfirst }}</a> >
+        {% endfor %}
+        <a href="{% url 'docs:category' docspost.category.slug %}">{{ docspost.category|capfirst }}</a>
+<!--        <p><a href="{{ docspost.category.slug }}">Раздел: {{ docspost.category|capfirst }}</a></p>-->
+        <h2>{{ docspost.title }}</h2>
+
+        <small>Автор: {{ docspost.author }}, {{ docspost.post_date|date:"d.m.Y" }}
+            {% if user|has_group:"asfr" %}
+            <a href="{% url 'docs:update_post' docspost.slug %}">(Редактировать)</a>
+            <a href="{% url 'docs:delete_post' docspost.slug %}">(Удалить)</a>
+            {% endif %}
+        </small>
+        <hr>
+        <br>
+
+        {% if docspost.header_image %}
+        <img src="{{ docspost.header_image.url }}" alt="">
+        {% endif %}
+
+        {{ docspost.body|safe }}
+
+        <br><br>
+        <a href="{% url 'docs:posts' %}" class="btn btn-secondary">Все статьи</a>
+        <br/>
+        <p></p>
+
+    </div>
+    <div class="col-3">
+        {% if cat_posts %}
+            <ul class="list-group list-group-flush">
+                {% for docspost in cat_posts %}
+                <li class="list-group-item">
+                    <a href="{% url 'docs:article-detail' docspost.slug %}">{{ docspost.title }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <h3>Страница недоступна</h3>
+        {% endif %}
+    </div>
+</div>
+
+
+{% endblock%}

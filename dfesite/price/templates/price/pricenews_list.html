@@ -1,19 +1,18 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body_block %}
-<div class="jumbotron bg-cover"
-     style="background-image: url(/static/images/stat_price.jpg)">
-    <h2>Средние цены
+<div class="py-5"
+     style="background-image: url(/static/images/stat_price.jpg); background-size: cover;">
+    <h2 class="container">Средние цены
         <br>в Ненецком автономном округе</h2>
 </div>
 <div class="container">
-    <div id="table1" class="container-fluid">
-    <h3>Статистические данные по ценам</h3>
-
+    <h3 class="mt-3">Статистические данные по ценам</h3>
+    <div class="list-group">
     {% for news in news_list %}
        <a href="{{ news.id }}" class="list-group-item list-group-item-action ">{{ news.title }}</a>
     {% endfor %}
-
+    </div>
         <p>
         <nav aria-label="Page navigation example">
         <ul class="pagination">
@@ -34,8 +33,5 @@
         </nav>
         </p>
 
-    <table class="table table-bordered">
-    </table>
-    </div>
 </div>
 {% endblock%}

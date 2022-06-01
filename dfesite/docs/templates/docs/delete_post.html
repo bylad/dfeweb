@@ -1,7 +1,7 @@
-{% extends 'blog_base.html' %}
+{% extends 'docs_base.html' %}
 {% load auth_extras %}
 {% block title %} Удаление {% endblock %}
-{% block blog_body %}
+{% block docs_body %}
     {% if user|has_group:"asfr" %}
     <h1>Удаление статьи</h1>
     <br><br>

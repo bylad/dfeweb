@@ -28,8 +28,8 @@ MEDIA_DIR = os.path.join(BASE_DIR, 'media')
 SECRET_KEY = sec_key
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-#DEBUG = False
+#DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'salary',
     'subsidy',
     'rate',
-    'blog',
+    'docs',
     'ckeditor',
     'mptt',
 ]

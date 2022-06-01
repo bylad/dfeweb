@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n mptt_tags %}
+{% load auth_extras %}
+{% block body_block %}
+<title>{% block title %}DFE Docs{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'css/docs.css' %}">
+
+{% if request.user|has_group:"asfr" %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light px-1 mb-2">
+    <div class="container">
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item dropdown btn btn-outline-success me-3" id="myDropdown1">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">  Разделы  </a>
+                    <ul class="dropdown-menu">
+
+                        {% recursetree cat_menu %}
+                            {% if not node.is_leaf_node %}
+                                <li>
+                                    <a class="dropdown-item text-dark" href="{% url 'docs:category' node.slug %}">{{ node|capfirst }} &raquo;</a>
+                                    <ul class="submenu dropdown-menu">{{ children }}</ul>
+                                </li>
+                            {% else %}
+                                <li><a class="dropdown-item text-dark" href="{% url 'docs:category' node.slug %}">{{ node|capfirst }}</a></li>
+                            {% endif %}
+                        {% endrecursetree %}
+
+                    </ul>
+                </li>
+                <li class="nav-item btn btn-sm btn-outline-secondary me-1" type="button"><a class="nav-link text-dark" href="{% url 'docs:add_post' %}">Добавить статью</a></li>
+                <li class="nav-item btn btn-sm btn-outline-secondary" type="button"><a class="nav-link text-dark" href="{% url 'docs:add_category' %}">Добавить раздел</a></li>
+            </ul>
+            <ul class="navbar-nav me-2 mt-2 mt-lg-0">
+                <form class="d-flex">
+                  <input class="form-control me-2 text-dark" type="search" placeholder="Найти..." aria-label="Search">
+                  <button class="btn btn-outline-success fa fa-search" type="submit"></button>
+                </form>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Collapsed Small Devices -->
+    <div class="collapsedSmallDevices">
+        <br>
+        <div class="input-group mb-3">
+            <button class="btn btn-sm btn-outline-secondary me-1" type="button"><a class="nav-link text-dark" href="{% url 'docs:add_post' %}">Добавить статью</a></button>
+            <button class="btn btn-sm btn-outline-secondary me-3" type="button"><a class="nav-link text-dark" href="{% url 'docs:add_category' %}">Добавить раздел</a></button>
+            <form class="d-flex">
+                <input class="form-control text-dark me-1 mt-1" type="search" placeholder="Найти..." aria-label="Search">
+                <button class="btn btn-outline-success fa fa-search mt-1" type="submit"></button>
+            </form>
+        </div>
+        <div class="accordion " id="accordionCategories">
+            {% recursetree cat_menu %}
+            <div class="accordion-item">
+                {% if node.is_leaf_node %}
+                    <a class="nav-link accordion-body" href="{% url 'docs:category' node.slug %}">{{ node.name|capfirst }}</a>
+                {% else %}
+                    <h2 class="accordion-header" id="{{ node.slug }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ node.slug }}" aria-expanded="false" aria-controls="panelsStayOpen-collapseOne">
+                            <span data-bs-toggle="collapse" onclick="window.location.href=&quot;{% url 'docs:category' node.slug %}&quot;">
+                                <a class="nav-link" href="{% url 'docs:category' node.slug %}" > {{ node.name|capfirst }}... &nbsp;|&nbsp;</a>
+                            </span>
+                        </button>
+                    </h2>
+                {% endif %}
+                <div id="collapse{{ node.slug }}" class="accordion-collapse collapse" aria-labelledby="{{ node.slug }}">
+                    <div class="accordion-body">
+                        {% if not node.is_leaf_node %}
+                            {{ children }}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endrecursetree %}
+        </div>
+        <br>
+    </div>
+<!-- ---------------------- -->
+
+    {% block docs_body %}
+    {% endblock %}
+{% else %}
+    <br><br>
+    <h5>Страница недоступна</h5>
+    <br><br>
+{% endif %}
+    <script type="text/javascript" src="{% static 'js/docs.js' %}"></script>
+{% endblock%}

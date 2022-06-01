@@ -1,0 +1,23 @@
+{% extends 'docs_base.html' %}
+{% load static %}
+{% load i18n mptt_tags %}
+{% load auth_extras %}
+{% block docs_body %}
+
+<div class="container ps-5">
+        <h2>Статьи, инструкции</h2>
+        <ul class="list-group list-group-flush">
+        {% for post in object_list %}
+            <li class="list-group-item"><a href="{% url 'docs:article-detail' post.slug %}">{{ post.title }}</a><br/>
+                {% if user|has_group:"asfr" %}
+                <small><a href="{% url 'docs:update_post' post.slug %}">(Редактировать)</a>
+                <a href="{% url 'docs:delete_post' post.slug %}">(Удалить)</a></small>
+                {% endif %}
+             </li>
+        {% endfor %}
+        </ul>
+</div>
+
+
+
+{% endblock %}

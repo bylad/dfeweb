@@ -10,10 +10,10 @@
 <!--    #table2{padding-top:50px;height:50%;color: #000;}-->
 <!--</style>-->
 
-<div class="jumbotron bg-cover"
+<div class="py-5"
      style="background-image: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.9) 100%),
                               url(https://placeimg.com/1500/480/tech)">
-    <h3>{{ salarynews_detail.title|slice:":114" }}<small><sup>1)</sup></small> {{ salarynews_detail.title|slice:"115:" }}</h3>
+    <h3 class="container">{{ salarynews_detail.title|slice:":114" }}<small><sup>1)</sup></small> {{ salarynews_detail.title|slice:"115:" }}</h3>
 </div>
 <div class="container">
     {% if user.is_authenticated %}
@@ -26,9 +26,8 @@
     <br>
     {% endif %}
 
-    <div id="table1" class="container-fluid">
 <!--        <h5>Среднесписочные номинальные заработные платы начисленные за месяц</h5>-->
-        <table class="table table-bordered">
+        <table class="table table-bordered mt-3">
             <thead class="thead-light">
             {% for zh in salaryhead_list %}
             {% if zh.pre_period == 'NaN' %}
@@ -160,8 +159,5 @@
         <p>Ссылка на источник: <a href="{{ salarynews_detail.href }}">{{ salarynews_detail.href }}</a></p>
         <p>Дата опубликования: {{ salarynews_detail.pub_date|date:"d.m.Y" }}</p>
         {% endif %}
-</div>
-
-    </div>
 </div>
 {% endblock%}

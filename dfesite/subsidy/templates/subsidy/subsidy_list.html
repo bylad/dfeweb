@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body_block %}
-<div class="jumbotron bg-cover"
-     style="background-image: url(/static/images/stat_subsidy.jpg)">
-    <h2>Предоставление гражданам субсидий и льгот
+<div class="py-5"
+     style="background-image: url(/static/images/stat_subsidy.jpg); background-size: cover;">
+    <h2 class="container">Предоставление гражданам субсидий и льгот
         <br>по оплате жилого помещения и коммунальных услуг
         <br>по Ненецкому автономному округу</h2>
 </div>
 <div class="container">
-    <div id="table1" class="container-fluid">
-    <h3>Статистические данные</h3>
+    <h3 class="mt-3">Статистические данные</h3>
+    <div class="list-group">
     {% for news in newshead_list %}
        <a href="{{ news.id }}" class="list-group-item list-group-item-action ">{{ news.news_title }}</a>
     {% endfor %}
-        <p>
+    </div>
+    <br>
         <nav aria-label="Page navigation example">
             <ul class="pagination">
             {% if page_obj.has_previous %}
@@ -31,11 +32,5 @@
             {% endif %}
             </ul>
         </nav>
-        </p>
-    </div>
-
-    <table class="table table-bordered">
-    </table>
-    </div>
 </div>
 {% endblock%}
