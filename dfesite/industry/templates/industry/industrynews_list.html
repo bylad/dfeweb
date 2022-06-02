@@ -19,13 +19,12 @@
     </p>
     <hr class="my-4">
     <h3>Статистические данные</h3>
-<!--    <h3>О промышленном производстве</h3>-->
     <div class="list-group">
     {% for news in news_list %}
        <a href="{{ news.id }}" class="list-group-item list-group-item-action ">{{ news.title }}</a>
-<!--       <a href="{{ news.id }}" class="list-group-item list-group-item-action ">{{ news.title|slice:"28:" }}</a>-->
     {% endfor %}
-        <p>
+    </div>
+    <br>
         <nav aria-label="Page navigation example">
             <ul class="pagination">
             {% if page_obj.has_previous %}
@@ -43,7 +42,5 @@
             {% endif %}
             </ul>
         </nav>
-        </p>
-    </div>
 </div>
 {% endblock%}

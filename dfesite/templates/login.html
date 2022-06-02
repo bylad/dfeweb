@@ -1,27 +1,26 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body_block %}
-<div class="jumbotron text-center">
-    <h1 class="h3 mb-3 font-weight-normal">Авторизация</h1>
-<!--    <h6>Пожалуйста авторизуйтесь</h6>-->
-    <br>
+<div class="py-5 text-center">
     {% if form.errors %}
-        <p>Неверные учетные данные</p>
+        <h3 class="my-4 font-weight-normal">Неверные учетные данные</h3>
+    {% else %}
+        <h3 class="my-4 font-weight-normal">Авторизация</h3>
     {% endif %}
-  <form class="form-group col-xs-4" method="POST">
-    {% csrf_token %}
-    <div class="row justify-content-md-center">
-    <div class="form-group col-md-4">
-      <input type="input" class="form-control" name="username" placeholder="Имя пользователя" required >
-    </div>
-      </div>
-    <div class="row justify-content-md-center">
-    <div class="form-group col-md-4">
-      <input type="password" class="form-control" name="password" placeholder="Пароль" required>
-      </div>
-    </div>
-      <br>
-      <button class="btn btn-lg btn-primary col-md-3" type="submit">Вход</button>
-  </form>
+<!--    <h6>Пожалуйста авторизуйтесь</h6>-->
+	<form class="form-group col-xs-4" method="POST">
+        {% csrf_token %}
+        <div class="row justify-content-md-center my-2">
+            <div class="form-group col-md-4">
+                <input type="input" class="form-control" name="username" placeholder="Имя пользователя" required>
+            </div>
+        </div>
+        <div class="row justify-content-md-center my-2">
+            <div class="form-group col-md-4">
+                <input type="password" class="form-control" name="password" placeholder="Пароль" required>
+            </div>
+        </div>
+        <button class="btn btn-lg btn-primary col-md-3 my-3" type="submit">Вход</button>
+    </form>
 </div>
 {% endblock %}

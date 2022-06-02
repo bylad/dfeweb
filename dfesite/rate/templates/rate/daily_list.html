@@ -11,7 +11,7 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark d-flex justify-content-center">
         <a class="btn btn-sm btn-outline-info text-dark" href="{% url 'rate:monthly_list' %}">Котировки нефти "Юралс"</a>
-        <a class="btn btn-sm btn-outline-info text-dark" href="{% url 'rate:chart' %}">Динамика курса доллара и нефти</a>
+        <a class="btn btn-sm btn-outline-info text-dark mx-1" href="{% url 'rate:chart' %}">Динамика курса доллара и нефти</a>
         {% if user.is_authenticated %}
             <form action="{% url 'rate:success' %}" method="POST">
                 {% csrf_token %}

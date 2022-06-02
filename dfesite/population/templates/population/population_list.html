@@ -13,7 +13,7 @@
        <a href="{{ migr.id }}" class="list-group-item list-group-item-action ">{{ migr.migration_title }}</a>
     {% endfor %}
     </div>
-        <p>
+    <br>
         <nav aria-label="Page navigation example">
             <ul class="pagination">
             {% if page_obj.has_previous %}
@@ -31,6 +31,5 @@
             {% endif %}
             </ul>
         </nav>
-        </p>
 </div>
 {% endblock%}

@@ -17,7 +17,7 @@
 </div>
 <div class="container">
     {% if user.is_authenticated %}
-    <form class="d-flex justify-content-center" action="{% url 'salary:success' %}" method="POST">
+    <form class="d-flex justify-content-center mt-2" action="{% url 'salary:success' %}" method="POST">
         {% csrf_token %}
         {{ form.as_p }}
         <input type="hidden" name="news_pk" value="{{ salarynews_detail.pk }}">
