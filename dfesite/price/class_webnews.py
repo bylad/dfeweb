@@ -45,7 +45,7 @@ class NewsStat(NewsLocate):
 
 
 class NewsStatDetail(NewsLocate):
-    def __init__(self, txt, *args, **kwargs):
+    def __init__(self, txt='Ненецкий', *args, **kwargs):
         super().__init__(*args, **kwargs)
 #        div_a = self.soup.find('div', {'class': 'content'}).find('a', text=re.compile(txt))
         div_desc = self.soup.find('div', {'class': 'document-list__item-title'}, text=re.compile(txt)).parent

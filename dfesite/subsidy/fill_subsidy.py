@@ -1,3 +1,4 @@
+import camelot
 import re
 import sys
 
@@ -43,11 +44,11 @@ def search_news(idx, page, news_text):
     :param news_text: искомая новость
     :return: list[news_count, title, href, pub_date, file]
     """
-    nao = 'Ненецком'
+    nao = 'Ненецкий'
     app_dir = 'subsidy'
     webpage = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
     news = []
-    # 0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (docx)
+    # 0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (путь к pdf)
     stat = NewsStat(idx, news_text, webpage, HEADER)
     if stat.acount:
         news.append(stat.acount)
@@ -71,9 +72,9 @@ def search_news(idx, page, news_text):
             return 404
         else:
             stat_file = WebFile(stat_detail.file_href, MEDIA, app_dir, year, stat_detail.file_name)
-            stat_file.download_file(rename=1)
-            file = DocxFile(MEDIA, app_dir, year, Path(stat_file.file_path).name).get_docx()
-            news.append(file)
+            stat_file.download_file()
+#            file = DocxFile(MEDIA, app_dir, year, Path(stat_file.file_path).name).get_docx()
+            news.append(stat_file.file_path)
             return news
     return None
 # ------------------------
@@ -97,6 +98,46 @@ def data_docx(doc):
     if tdata:
         return tdata  # 0 - таблица с субсидиями, 1 - таблица со льготами
     return None
+
+
+def get_pdf_table(list_txt):
+    data_list = list()
+    is_num = 0
+    number_txt = ''
+    string_buffer = ''
+    for txt in list_txt:
+        if txt[:1].isupper():
+            if string_buffer and is_num:
+                data_list.append((string_buffer, number_txt))
+                string_buffer = ''
+                is_num = 0
+            string_buffer = txt
+        elif txt[:1].isdigit():
+            number_txt = txt
+            is_num = 1
+            if number_txt == list_txt[-1]:
+                data_list.append((string_buffer, number_txt))
+        else:
+            if is_num:
+                data_list.append((f"{string_buffer} {txt}", number_txt))
+                string_buffer = ''
+                is_num = 0
+            else:
+                string_buffer = f"{string_buffer} {txt}"
+    return data_list
+
+
+def extract_table(pdf_path):
+    tables = camelot.read_pdf(pdf_path)
+    pdf_tables = list()
+    for idx in range(tables.n):
+        tdata = tables[idx].data
+        tdata_text = tdata[1][0]  # tdata[0] = ['январь-март 2022 года']
+        tdata_stripped_list = [txt.strip() for txt in tdata_text.splitlines()]
+        tdata_tuple_list = get_pdf_table(tdata_stripped_list)
+        tdata_tuple_list.insert(0, ('', tdata[0][0]))
+        pdf_tables.append(tdata_tuple_list)
+    return pdf_tables
 
 
 def data_todb(datalist, news_pk, idx):
@@ -129,7 +170,7 @@ def populate():
                 period = re.search(r"\d{4}", found[1]).group()  # период за год - '2021'
             news_id = add_newshead(found[1], found[2], found[3], period.strip())
 
-            data_list = data_docx(found[4])
+            data_list = extract_table(found[4])
             for i, data in enumerate(data_list):
                 data_todb(data, news_id, i)
     added = NewsHead.objects.get(id=news_id)
