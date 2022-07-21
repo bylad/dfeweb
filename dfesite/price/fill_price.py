@@ -23,6 +23,9 @@ MEDIA = settings.MEDIA_DIR
 SEARCH_TXT1 = 'Ненецкий автономный округ'
 SEARCH_TXT2 = 'Нарьян-Мар'
 CUT_NM = ' и г.Нарьян-Мару'
+SEARCH_NEWS_TXT = ' на отдельные потребительские товары'
+SEARCH_PETROL_TXT = ' на бензин'
+
 
 # Функции добавления в БД
 def add_news(title, news_href, date):
@@ -74,7 +77,7 @@ def data_docx(doc):
             if any(x in cell.text for x in ben):
                 ben_i = i
                 break
-        if ben_i <= i < len(doc.tables[0].rows):
+        if ben_i <= i < len(doc.tables[0].rows) and j < 3:
             pet_name[j] = doc.tables[0].cell(i, 0).text
             pet_price[j] = float(re.sub(',', '.', doc.tables[0].cell(i, 1).text))
             j += 1
@@ -214,7 +217,7 @@ def search_news(idx, page, news_text):
         stat_file.download_file()
         file = stat_file.file_path
         filename, file_extension = os.path.splitext(file)
-        if news_text == 'О потребительских ценах на бензин':
+        if news_text == SEARCH_PETROL_TXT:
             if file_extension.lower() == '.docx' or file_extension.lower() == '.doc':
                 file = DocxFile(MEDIA, app_dir, year, stat_detail.file_name).get_docx()
         news.append(file)
@@ -230,30 +233,32 @@ def mid_news(news_num, page):
     Возвращает количество найденных новостей на странице
     0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
     """
-    newsdata = search_news(news_num, page, 'потребительские')
+    newsdata = search_news(news_num, page, SEARCH_NEWS_TXT)
     all_news = PriceNews.objects.all().order_by('-pub_date')
-    for news in all_news:  # добавлена проверка, т.к. на сайте статистики м.б. ошибочная дата в заголовке
-        if news.title == newsdata[1] and news.pub_date != newsdata[3]:
-            previous_news = news.get_previous_by_pub_date()
-            pattern = re.compile('\d{1,2}\s[яфмаисонд][а-я]+[а|я]\s\d{4}')
-            previous_news_title_date = dateparser.parse(re.search(pattern, previous_news.title).group())
-            # т.к. данные обновляются еженедельно, то к предыдущей дате добавляем 7 дней
-            newsdate = previous_news_title_date + timedelta(days=7)
-            new_date = f"{newsdate.day - 2} {MONTHS[newsdate.month - 1]} {newsdate.year}"
-            newsdata[1] = re.sub(pattern, new_date, newsdata[1])
-        elif news.title == newsdata[1] and news.pub_date == newsdata[3]:
-            data_in = 1
-            return newsdata[0], data_in, 0  # news_id=0, т.к. новость уже существует
+    if newsdata is not None:
+        for news in all_news:  # добавлена проверка, т.к. на сайте статистики м.б. ошибочная дата в заголовке
+            if news.title == newsdata[1] and news.pub_date != newsdata[3]:
+                previous_news = news.get_previous_by_pub_date()
+                pattern = re.compile('\d{1,2}\s[яфмаисонд][а-я]+[а|я]\s\d{4}')
+                previous_news_title_date = dateparser.parse(re.search(pattern, previous_news.title).group())
+                # т.к. данные обновляются еженедельно, то к предыдущей дате добавляем 7 дней
+                newsdate = previous_news_title_date + timedelta(days=7)
+                new_date = f"{newsdate.day - 2} {MONTHS[newsdate.month - 1]} {newsdate.year}"
+                newsdata[1] = re.sub(pattern, new_date, newsdata[1])
+            elif news.title == newsdata[1] and news.pub_date == newsdata[3]:
+                data_in = 1
+                return newsdata[0], data_in, 0  # news_id=0, т.к. новость уже существует
 
-    data_in = check_db(newsdata[3], 0)
-    if data_in == 0:
-        # определяем ID новости, к нему будут привязаны данные
-        news_id = add_news(newsdata[1], newsdata[2], newsdata[3])
-        xls_file = newsdata[4]
-        xl_title, products, prices = data_xls(xls_file)
-        for p in range(len(products)):  # кол-во строк с ценами на товары
-            add_data(news_id, products[p], prices[p])
-    return newsdata[0], data_in, news_id
+        data_in = check_db(newsdata[3], 0)
+        if data_in == 0:
+            # определяем ID новости, к нему будут привязаны данные
+            news_id = add_news(newsdata[1], newsdata[2], newsdata[3])
+            xls_file = newsdata[4]
+            xl_title, products, prices = data_xls(xls_file)
+            for p in range(len(products)):  # кол-во строк с ценами на товары
+                add_data(news_id, products[p], prices[p])
+        return newsdata[0], data_in, news_id
+    return 0, None, None
 
 
 def pet_news(news_num, page):
@@ -264,7 +269,7 @@ def pet_news(news_num, page):
     Возвращает количество найденных новостей на странице
     """
     # [0] количество новостей, [1] заголовок, [2] ссылка, [3] дата, [4] файл
-    newsdata = search_news(news_num, page, 'О потребительских ценах на бензин')
+    newsdata = search_news(news_num, page, SEARCH_PETROL_TXT)
     if newsdata is not None:
         data_in = check_db(newsdata[3], 1)
         if data_in == 0:
