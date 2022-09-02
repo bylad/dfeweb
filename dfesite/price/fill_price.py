@@ -433,17 +433,22 @@ def from_xlsm(path):
 @transaction.atomic
 def populate():
     page_num = 1
-    print('============== price.populate ===============')
+    print('============== PRICE BEGIN ===============')
     while page_num < 3:
         print(f'page={page_num}')
-        data_exist, mnews_id = from_web(page_num)
-        if data_exist == 1:
-            print('===========PRICE DATA EXIST===========')
-            break
-        page_num += 1
-        current_news = PriceNews.objects.get(id=mnews_id)
-        print(f'current_news.id={current_news.id}')
-    print('Процедура выполнена')
+        try:
+            data_exist, mnews_id = from_web(page_num)
+            if data_exist == 1:
+                print('===========PRICE DATA EXIST===========')
+                break
+            page_num += 1
+            current_news = PriceNews.objects.get(id=mnews_id)
+            if current_news:
+                print(f'current_news.id={current_news.id}')
+        except Exception as e:
+            print(e)
+    print('============== PRICE END ===============')
 
 # if __name__ == "__main__":
 #     populate()
+
