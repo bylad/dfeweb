@@ -31,7 +31,7 @@ SEARCH_PETROL_TXT = ' на бензин'
 def add_news(title, news_href, date):
     PriceNews.objects.get_or_create(title=title, href=news_href, pub_date=date)
     current_news = PriceNews.objects.get(title=title)
-    send_msg.sending('price', current_news.id, current_news.title)  # здесь срабатывала ложно
+    #send_msg.sending('price', current_news.id, current_news.title)  # здесь срабатывала ложно
     return current_news.id
 
 
@@ -71,22 +71,18 @@ def data_docx(doc):
     ben = ['Бензин автомобильный марки АИ-92']
     if len(doc.tables) > 1:
         print('Внимание! Изменилось количество таблиц. Проверьте исходный файл.')
-        print('Обрабатывается только первая таблица...')
-    for i, row in enumerate(doc.tables[0].rows):
+        print('Обрабатывается 2-ая таблица...')
+    for i, row in enumerate(doc.tables[1].rows):
         for cell in row.cells:  # поиск строки с необх. данными
             if any(x in cell.text for x in ben):
                 ben_i = i
                 break
-        if ben_i <= i < len(doc.tables[0].rows) and j < 3:
-            pet_name[j] = doc.tables[0].cell(i, 0).text
-            pet_price[j] = float(re.sub(',', '.', doc.tables[0].cell(i, 1).text))
+        if ben_i <= i < len(doc.tables[1].rows) and j < 3:
+            pet_name[j] = doc.tables[1].cell(i, 0).text
+            pet_price[j] = float(re.sub(',', '.', doc.tables[1].cell(i, 1).text))
             j += 1
     pet_head = doc.tables[0].cell(0, 0).text.replace(CUT_NM, '')
-    print(pet_head)
-    # print(pet_name)
-    # print(pet_price)
     print('Обработка таблицы DOCX файла успешно завершена.\n')
-    # sys.exit()
     return pet_head, pet_name, pet_price
 
 
@@ -119,10 +115,6 @@ def data_xls(xls):  # предыдущая версия data_xls(xls, search_txt
         j += 1
 
     print('Обработка Excel файла успешно завершена.\n')
-    # print(f'Заголовок:\n{xls_title}\n')
-    # print(f'{col_name}\n')
-    # print(f'{col_price}\n')
-    # sys.exit()
     return xls_title, col_name, col_price
 #--------------------------------
 
@@ -277,7 +269,6 @@ def pet_news(news_num, page):
             if not isinstance(newsdata[4], str):
                 print('============== pet_news: DOC FILE ===============')
                 pet_title, pet_name, pet_price = data_docx(newsdata[4])
-
                 for p in range(len(pet_name)):  # кол-во строк с ценами на товары
                     add_petdata(pethead_id, pet_name[p], pet_price[p])
             else:
