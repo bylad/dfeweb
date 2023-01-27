@@ -1,9 +1,12 @@
-import re, requests
+import re
+import requests
+import pandas as pd
 from bs4 import BeautifulSoup
 from transliterate import translit
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from dateparser import parse
+from decimal import Decimal
 from pycbrf.toolbox import ExchangeRates
 from django.db.models import Avg
 from .models import Daily, Monthly
@@ -54,10 +57,22 @@ def fill_monthly(rate_date, rate_oil, rate_usd):
     Monthly.objects.get_or_create(date=rate_date, oil=rate_oil, usd=rate_usd)
 
 
+# def usd_rates(today):
+#     """ Курс доллара на дату (today) в формате %Y-%m-%d 
+#         Запрос выполняется с помощью API pycbrf
+#     """
+#     rates = ExchangeRates(today)
+#     return rates['USD'].value
+
 def usd_rates(today):
-    """ Курс доллара на дату (today) в формате %Y-%m-%d """
-    rates = ExchangeRates(today)
-    return rates['USD'].value
+    """ Курс доллара на дату (today) 
+        Запрос выполняется с помощью XML запроса
+        API запрос падает с ошибкой 
+    """
+    url = f'https://www.cbr.ru/scripts/XML_daily.asp?date_req={datetime.strftime(today, "%d/%m/%Y")}&VAL_NM_RQ=R01235'
+    df = pd.read_xml(url, encoding='cp1251')
+    s = df.loc[df['ID'] == 'R01235']['Value'].item()
+    return Decimal(s.replace(',', '.'))
 
 
 def yemo(input_date):
@@ -100,6 +115,7 @@ def populate():
         db_day += relativedelta(days=1)
         print(f'dbday+={db_day}')
         usd = usd_rates(db_day)
+        print('Function usd_rates() done!')
         fill_daily(db_day, usd)
 
     db_last_date = Monthly.objects.last().date
