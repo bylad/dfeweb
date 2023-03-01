@@ -51,9 +51,9 @@ class NewsStatDetail(NewsLocate):
         div_desc = self.soup.find('div', {'class': 'document-list__item-title'}, text=re.compile(txt)).parent
         div_atag = div_desc.find_previous_sibling().find('a')
         self.pub_date = parse(re.search(r'\d{2}.\d{2}.\d{4}', str(div_desc)).group(), date_formats=['%d.%m.%Y'])
-        
         self.path, self.file_name = os.path.split(self.www + div_atag.get('href'))
-        self.file_href = requests.get(self.www + div_atag.get('href'))
+        self.file_href = requests.get(self.www + div_atag.get('href'), verify=False)
+
 
 class NewsUrals(NewsLocate):
     def __init__(self, txt, *args, **kwargs):
@@ -75,6 +75,7 @@ class NewsUrals(NewsLocate):
             print("Attribute Error! News date was dropped!")
         return parse(news_date)
 
+
 class NewsUralsDetail(NewsLocate):
     def __init__(self, txt,*args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,6 +84,7 @@ class NewsUralsDetail(NewsLocate):
 
     def get_price(self):
         return float(re.sub(',', '.', self.price_str))
+
 
 class PopulationStat(NewsLocate):
     def __init__(self, idx, txt, *args, **kwargs):
@@ -109,6 +111,7 @@ class PopulationStat(NewsLocate):
             pub_date = '9 сентября 1999'
             print("Attribute Error! News date was dropped!")
         return parse(pub_date)
+
 
 def create_mydiv_list(alldivs, find_string):
     mydiv_list = []
