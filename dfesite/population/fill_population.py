@@ -71,19 +71,29 @@ def search_webdata(idx, search_text):
     return None
 
 
-def data_docx(doc):
+def data_docx(doc, doc_name):
     tdata = []
     table = doc.tables[0]
     if len(doc.tables) > 1:
         print('Внимание! Изменилось количество таблиц. Проверьте исходный файл.')
         print('Обрабатывается только первая таблица...')
-    for i, row in enumerate(table.rows):
-        if i == 1:
-            try:
-                text = [" ".join(cell.text.split()) for cell in row.cells]
-                tdata = [int(ele) for j, ele in enumerate(text) if j > 0]
-            except Exception:
-                print('Внимание! Изменилась структура таблицы. Проверьте исходный файл')
+    if SEARCH_MIGRATION in doc_name:
+        for i, row in enumerate(table.rows):
+            if i == 1:  # обработка 2-ой строки
+                try:
+                    text = [" ".join(cell.text.split()) for cell in row.cells]
+                    tdata = [int(ele) for j, ele in enumerate(text) if j > 0]  # пропустить 1ый элемент
+                except Exception:
+                    print('Внимание! Изменилась структура таблицы. Проверьте исходный файл')
+    else:
+        for i, col in enumerate(table.columns):
+            if i == 1:  # обработка 2-го столбца
+                try:
+                    text = [" ".join(cell.text.split()) for cell in col.cells]
+                    tdata = [int(ele) for j, ele in enumerate(text) if j > 1]  # пропустить 1ые 2 элемента
+                    del tdata[2]  # удаляем элемент с индексом 2 (прирост)
+                except Exception:
+                    print('Внимание! Изменилась структура таблицы. Проверьте исходный файл')
     return tdata
 
 
@@ -119,7 +129,7 @@ def putto_db(srch_txt):
     if info:
         if db_migrhead.last().migration_title == info[1]:
             return None
-        data_list = data_docx(info[4])
+        data_list = data_docx(info[4], info[1])  # аргумент1 - файл docx, аргумент2 - наименование файла
         if srch_txt == SEARCH_MIGRATION and db_migrhead:  # если ищем мигр.данные и они есть в БД
             for db in db_migrhead:
                 if info[3] == db.pub_date:
