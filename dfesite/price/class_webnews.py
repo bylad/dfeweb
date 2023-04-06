@@ -53,7 +53,10 @@ class NewsStatDetail(NewsLocate):
         self.pub_date = parse(re.search(r'\d{2}.\d{2}.\d{4}', str(div_desc)).group(), date_formats=['%d.%m.%Y'])
         self.path, self.file_name = os.path.split(self.www + div_atag.get('href'))
         self.file_href = requests.get(self.www + div_atag.get('href'), verify=False)
+<<<<<<< HEAD
 
+=======
+>>>>>>> ec6a510f678dbb630c34601cdf01607f083745cc
 
 class NewsUrals(NewsLocate):
     def __init__(self, txt, *args, **kwargs):
