@@ -46,11 +46,17 @@ def pptx(request):
     i = 0
     production_cur_year = [''] * 8
     for ele in production_type_list:
-        x = production_all.get(industry_production__contains=ele)
-        if i < 4:
-            production_cur_year[i] = str(x.cur_year_production * 1000)
-        else:
-            production_cur_year[i] = str(x.cur_year_production)
+        try:
+            x = production_all.get(industry_production__contains=ele)
+        except Exception:
+            x = ele
+        if x != ele:  # если элемент списка существует в БД
+            if i < 4:
+                production_cur_year[i] = str(x.cur_year_production * 1000)
+            else:
+                production_cur_year[i] = str(x.cur_year_production)
+        else:  # если элемент списка отсутствует в БД, то присваиваем пустое значение
+            production_cur_year[i] = ''
         i += 1
     # print(f'current_industrynews.title={current_industrynews.title}')
     file_path = create_pptx.new_pptx(production_cur_year, index, current_industrynews.title)
