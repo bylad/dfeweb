@@ -10,7 +10,9 @@ from decimal import Decimal
 from pycbrf.toolbox import ExchangeRates
 from django.db.models import Avg
 from .models import Daily, Monthly
+import ssl
 
+ssl._create_default_https_context = ssl._create_unverified_context
 
 class NewsLocate:
     def __init__(self, web, header, txt):
