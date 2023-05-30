@@ -154,6 +154,7 @@ def populate():
         if migrtitle_id:
             current = MigrationHead.objects.get(id=migrtitle_id)
             print(f'current_migr.id={current.id}')
-            send_msg.sending('population', current.id, current.migration_title)
+    if migrtitle_id:
+        send_msg.sending('population', current.id, current.migration_title)
     print("-----------------------POPULATION END--------------------------")
 
