@@ -194,7 +194,7 @@ def search_news(idx, page, news_text):
     """
     nao = 'Ненецкий'
     app_dir = 'price'
-    webpage = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
+    webpage = 'https://29.rosstat.gov.ru/news?page=' + str(page)
     news = []
     # 0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
     stat = NewsStat(idx, news_text, webpage, HEADER)
@@ -220,7 +220,7 @@ def search_news(idx, page, news_text):
 def mid_news(news_num, page):
     """
     Поиск новости 'Средние цены и их изменение на отдельные потребительские товары' по вхождению слова 'потребительские'
-    с индексом (news_num) на веб странице 'https://arhangelskstat.gks.ru/news?page=' + str(page)
+    с индексом (news_num) на веб странице 'https://29.rosstat.gov.ru/news?page=' + str(page)
     Добавление найденных данных в БД
     Возвращает количество найденных новостей на странице
     0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
@@ -256,7 +256,7 @@ def mid_news(news_num, page):
 def pet_news(news_num, page):
     """
     Поиск новости 'О потребительских ценах на бензин')
-    с индексом (news_num) на веб странице 'https://arhangelskstat.gks.ru/news?page=' + str(page)
+    с индексом (news_num) на веб странице 'https://29.rosstat.gov.ru/news?page=' + str(page)
     Добавление найденных данных в БД
     Возвращает количество найденных новостей на странице
     """

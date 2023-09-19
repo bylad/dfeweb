@@ -48,7 +48,7 @@ def search_webdata(idx, search_text):
     :return: [news_count, title, href, pub_date, file]
     """
     app_dir = 'population'
-    webpage = 'https://arhangelskstat.gks.ru/population111'
+    webpage = 'https://29.rosstat.gov.ru/population111'
     # 0-количество, 1-заголовок, 2-ссылка, 3-дата, 4-файл (docx)
     population_info = []
     stat = PopulationStat(idx, search_text, webpage, HEADER)

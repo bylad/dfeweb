@@ -33,7 +33,7 @@ class NewsLocate:
 
 class NewsDetail:
     def __init__(self, web, HEADER, txt):
-        arh = 'https://arhangelskstat.gks.ru'
+        arh = 'https://29.rosstat.gov.ru'
         news_soup = BeautifulSoup(requests.get(web, headers=HEADER).content, 'html.parser')
         news_desc = news_soup.find('div', {'class': 'document-list__item-title'}, text=re.compile('Ненецкий')).parent
         news_atag = news_desc.find_previous_sibling().find('a')
@@ -190,7 +190,7 @@ def last_added_news(HEADER):
     except AttributeError:
         last_db_date = datetime.datetime(2019, 9, 16, 0, 0)
     while True:
-        url = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
+        url = 'https://29.rosstat.gov.ru/news?page=' + str(page)
         stat_news = NewsLocate(url, HEADER, 'О промышленном производстве')
         if stat_news.atag is not None:
             news_date = stat_news.publicated
@@ -228,7 +228,7 @@ def populate():
     page = last_added_news(HEADER)
     while page > 0:
         print(f'industry.populate page={page}')
-        url = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
+        url = 'https://29.rosstat.gov.ru/news?page=' + str(page)
         stat = NewsLocate(url, HEADER, 'О промышленном производстве')
         # Если на текущей странице новость не найдена, то переходим к следующей
         if not stat.atag:

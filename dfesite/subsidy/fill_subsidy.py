@@ -46,7 +46,7 @@ def search_news(idx, page, news_text):
     """
     nao = 'Ненецкий'
     app_dir = 'subsidy'
-    webpage = 'https://arhangelskstat.gks.ru/news?page=' + str(page)
+    webpage = 'https://29.rosstat.gov.ru/news?page=' + str(page)
     news = []
     # 0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (путь к pdf)
     stat = NewsStat(idx, news_text, webpage, HEADER)
