@@ -185,6 +185,7 @@ def create_db(id_news, t1, t2, is_january):
 
 def last_added_news(HEADER):
     page = 1
+    news_db_dates_diff = 100
     try:
         last_db_date = IndustryNews.objects.last().pub_date
     except AttributeError:
@@ -194,10 +195,17 @@ def last_added_news(HEADER):
         stat_news = NewsLocate(url, HEADER, 'О промышленном производстве')
         if stat_news.atag is not None:
             news_date = stat_news.publicated
+            news_db_dates_diff = (news_date - last_db_date).days
             print(f'page={page}, site={news_date}, db={last_db_date}')
+            print(f'(news_date - db_date) = {news_db_dates_diff}')
             print(f'{stat_news.atag}')
-            if news_date == last_db_date:
+            if news_db_dates_diff < 8:
                 return page - 1
+            # else:
+            #    print('\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
+            #    print('ВНИМАНИЕ! Проверьте дату публикации новости на сайте и дату создания файла с данными.')
+            #    print('При разнице между ними > 7 новость не будет добавлена!')
+            #    print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n')
         page += 1
 
 
