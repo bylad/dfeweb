@@ -59,12 +59,14 @@ def fill_monthly(rate_date, rate_oil, rate_usd):
     Monthly.objects.get_or_create(date=rate_date, oil=rate_oil, usd=rate_usd)
 
 
-# def usd_rates(today):
+#def usd_rates(today):
 #     """ Курс доллара на дату (today) в формате %Y-%m-%d 
 #         Запрос выполняется с помощью API pycbrf
 #     """
-#     rates = ExchangeRates(today)
-#     return rates['USD'].value
+#    print(f"usd_rates({today})")
+#    rates = ExchangeRates(today)
+#    print(rates['USD'].value)
+#    return rates['USD'].value
 
 def usd_rates(today):
     """ Курс доллара на дату (today) 
@@ -129,3 +131,4 @@ def populate():
     if news_data(db_last_date) is not None:
         news_data(db_last_date)
     print('Процедура fill_rate выполнена')
+
