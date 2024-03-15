@@ -45,7 +45,7 @@ class NewsDetail:
         request = requests.get(web, headers=header, verify=False).content
         news_soup = BeautifulSoup(request, 'html.parser')
         p = news_soup.find('p', text=re.compile(txt))
-        self.price_str = re.findall(r'\d+\,\d+', p.text)[0]
+        self.price_str = re.findall(r'\d+\,?\d+', p.text)[0]
 
     def get_price(self):
         return float(re.sub(',', '.', self.price_str))
@@ -89,7 +89,7 @@ def news_data(last_month):
     web_page = 'https://www.economy.gov.ru/material/departments/d12/konyunktura_mirovyh_tovarnyh_rynkov/'
     head = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ('
                           'KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'}
-    news_txt = 'О средней цене'
+    news_txt = 'сорта «Юралс»'
     p_txt = 'долл. США'
     news = NewsLocate(web_page, head, news_txt)
     if news.atag_all is not None:
