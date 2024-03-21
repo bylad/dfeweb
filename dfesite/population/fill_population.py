@@ -1,3 +1,4 @@
+import camelot
 import os
 import re
 import requests
@@ -19,6 +20,8 @@ MEDIA = settings.MEDIA_DIR
 NAO = "Ненецкий автономный округ"
 SEARCH_MIGRATION = 'О числе прибывших, выбывших'
 SEARCH_ZAGS = 'О числе зарегистрированных родившихся'
+SEARCH_ZAGS_LIST = ["Родившиеся", "Умершие", "браков", "разводов"]
+
 
 # Функции добавления в БД
 def add_migrhead(title, news_href, date):
@@ -27,18 +30,21 @@ def add_migrhead(title, news_href, date):
     # send_msg.sending('price', current_news.id, current_news.title)  # здесь срабатывала ложно
     return current_migrhead.id
 
+
 def add_migrdata(ind, count_in, count_out, up_down):
     MigrationData.objects.get_or_create(migrationhead_id=ind, arrived=count_in, departed=count_out, gain=up_down)
     # return tovar
+
 
 def add_zagshead(title, href, date):
     ZagsHead.objects.get_or_create(zags_title=title, href=href, pub_date=date)
     current_zagshead = ZagsHead.objects.get(zags_title=title)
     return current_zagshead.id
 
+
 def add_zagsdata(ind, born, died, wedd, divorce):
     ZagsData.objects.get_or_create(zagshead_id=ind, born=born, died=died, wedd=wedd, divorce=divorce)
-# ------------------------
+
 
 def search_webdata(idx, search_text):
     """
@@ -60,7 +66,12 @@ def search_webdata(idx, search_text):
         file_requests = requests.get(stat_href)
         stat_file = WebFile(file_requests, MEDIA, app_dir, year, file_name)
         stat_file.download_file()
-        file = DocxFile(MEDIA, app_dir, year, file_name).get_docx()
+
+        # Если PDF, то указываем путь к файлу, иначе возращаем тип object (файл DOCX)
+        if os.path.splitext(file_name)[1] == '.pdf':
+            file = stat_file.file_path
+        else:
+            file = DocxFile(MEDIA, app_dir, year, file_name).get_docx()
 
         population_info.append(stat.div_count)
         population_info.append(stat_title)
@@ -97,6 +108,15 @@ def data_docx(doc, doc_name):
     return tdata
 
 
+def get_pdf_table(pdf_file):
+    tables = camelot.read_pdf(pdf_file)
+    if tables.n > 0:
+        df = tables[0].df
+        df1 = df[df[0].str.contains("(?i)|".join(SEARCH_ZAGS_LIST))]
+        return df1[1].to_list()
+    return None
+
+
 def add_migr(wwwdata, docdata):
     migrhead_id = add_migrhead(wwwdata[1], wwwdata[2], wwwdata[3].date())
     add_migrdata(migrhead_id, docdata[0], docdata[1], docdata[2])
@@ -129,7 +149,12 @@ def putto_db(srch_txt):
     if info:
         if db_migrhead.last().migration_title == info[1]:
             return None
-        data_list = data_docx(info[4], info[1])  # аргумент1 - файл docx, аргумент2 - наименование файла
+        
+        if type(info[4]) is str:  # если тип строка, то это файл PDF, иначе DOCX
+            data_list = get_pdf_table(info[4])
+        else:
+            data_list = data_docx(info[4], info[1])  # аргумент1 - файл docx, аргумент2 - наименование файла
+        
         if srch_txt == SEARCH_MIGRATION and db_migrhead:  # если ищем мигр.данные и они есть в БД
             for db in db_migrhead:
                 if info[3] == db.pub_date:
