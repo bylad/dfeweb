@@ -7,7 +7,7 @@ import urllib3
 from django.db import transaction
 from django.conf import settings  # correct way for access BASE_DIR, MEDIA_DIR...
 from pathlib import Path
-from price.class_webnews import NewsStat, NewsStatDetail
+from price.class_webnews import NewsStat, NewsStatDetail, PriceStat
 from price.class_filehandle import WebFile, DocxFile
 # from transliterate import translit
 
@@ -21,6 +21,7 @@ MEDIA = settings.MEDIA_DIR
 SEARCH_TEXT = 'предоставление гражданам субсидий и социальной поддержки'
 SUBSIDY_TITLE = 'Предоставление гражданам субсидий на оплату жилого помещения и коммунальных услуг'
 BENEFIT_TITLE = 'Предоставление гражданам социальной поддержки (льгот) по оплате жилого помещения и коммунальных услуг'
+WEBPAGE_SUBSIDY = 'https://29.rosstat.gov.ru/housing111'
 
 # Функции добавления в БД
 def add_newshead(title, news_href, date, news_period):
@@ -36,6 +37,42 @@ def add_benefitdata(ind, name, value):
 # ------------------------
 
 # ---Добавление данных с сайта---
+def search_subsidy(idx, news_text):
+    """
+    Поиск новости news_text
+    :param idx: номер новости на веб-странице
+    :param news_text: искомая новость
+    :return: list[news_count, title, href, pub_date, file]
+    """
+    # nao = 'Ненецком'
+    nao = 'Ненецкий'
+    app_dir = 'subsidy'
+    news = []
+    # 0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл
+    stat = PriceStat(idx, news_text, WEBPAGE_SUBSIDY, HEADER)
+    print()
+    if stat.div_count:
+        news.append(stat.div_count)
+        news.append(stat.get_title())
+        news.append(stat.webfile_link)
+        news.append(stat.get_pub_date())
+        # Если дата новости с сайта < или = дате последней новости из БД, то обработку прекращаем
+        try:
+            if news[3] <= NewsHead.objects.last().pub_date:
+                print("Новость была добавлена ранее.")
+                return "Exist"
+        except AttributeError:
+            print("Добавляем данные в БД")
+
+        year = re.findall(r'\d{4}', stat.get_title())[0]
+        stat_file = WebFile(stat.webfile_href, MEDIA, app_dir, year, stat.webfile_name)
+        stat_file.download_file()
+        news.append(stat_file.file_path)
+        return news
+    return None
+
+
+
 def search_news(idx, page, news_text):
     """
     Поиск новости news_text
@@ -158,21 +195,20 @@ def data_todb(datalist, news_pk, idx):
 @transaction.atomic
 def populate():
     print("-----------------------SUBSIDY BEGIN--------------------------")
-    for pg in range(1, 100):
-        found = search_news(0, pg, SEARCH_TEXT)  # 0-кол. новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл(docx)
-        if found == 404 or found == "Exist":
-            print("-----------------------SUBSIDY END--------------------------")
-            return
-        elif found is not None:
-            try:  # период - 'январь-июнь 2021'
-                period = re.search(r"[яфмаисонд][а-я]+[ьйт]\s*-\s*[яфмаисонд][а-я]+[ьйт]\s*\d{4}", found[1]).group()
-            except AttributeError:
-                period = re.search(r"\d{4}", found[1]).group()  # период за год - '2021'
-            news_id = add_newshead(found[1], found[2], found[3], period.strip())
+    found = search_subsidy(0, SEARCH_TEXT)  # 0-кол. новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл(docx)
+    if found == 404 or found == "Exist":
+        print("-----------------------SUBSIDY END--------------------------")
+        return
+    elif found is not None:
+        try:  # период - 'январь-июнь 2021'
+            period = re.search(r"[яфмаисонд][а-я]+[ьйт]\s*-\s*[яфмаисонд][а-я]+[ьйт]\s*\d{4}", found[1]).group()
+        except AttributeError:
+            period = re.search(r"\d{4}", found[1]).group()  # период за год - '2021'
+        news_id = add_newshead(found[1], found[2], found[3], period.strip())
 
-            data_list = extract_table(found[4])
-            for i, data in enumerate(data_list):
-                data_todb(data, news_id, i)
+        data_list = extract_table(found[4])
+        for i, data in enumerate(data_list):
+            data_todb(data, news_id, i)
     added = NewsHead.objects.get(id=news_id)
     send_msg.sending('subsidy', news_id, added.news_title)
     print("-----------------------SUBSIDY END--------------------------")
