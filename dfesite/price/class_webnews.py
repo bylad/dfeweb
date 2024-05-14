@@ -86,6 +86,37 @@ class NewsUralsDetail(NewsLocate):
         return float(re.sub(',', '.', self.price_str))
 
 
+class PriceStat(NewsLocate):
+    def __init__(self, idx, txt, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        all_divs = self.soup.findAll('div', attrs={"class": "document-list__item"})
+        div_list = create_mydiv_list(all_divs, txt)
+        self.div_count = len(div_list)
+        if self.div_count == 0:
+            self.div_tag, self.webfile_link, self.webfile_href, self.webfile_path, self.webfile_name = None, None, None, None, None
+        else:
+            self.div_tag = div_list[idx]
+            self.webfile_link = self.www + self.div_tag.findChild('div', attrs={"class": "document-list__item-link"}).findChild('a').get('href')
+            self.webfile_href = requests.get(self.webfile_link)
+            self.webfile_path, self.webfile_name = os.path.split(self.webfile_link)
+
+    def get_title(self):
+        return self.div_tag.findChild('div', attrs={"class": "document-list__item-title"}).text.strip()
+
+    def get_href(self):
+        return self.div_tag.findChild('a').get('href')
+
+    def get_pub_date(self):
+        try:
+            pub_text = self.div_tag.findChild(class_='document-list__item-info').text
+            pub_date = re.search(r'(\d{2}.\d{2}.\d{4})', pub_text).group()
+        except AttributeError:
+            pub_date = '9 сентября 1999'
+            print("Attribute Error! News date was dropped!")
+        return parse(pub_date, date_formats=['%d.%m.%Y'])
+
+
 class PopulationStat(NewsLocate):
     def __init__(self, idx, txt, *args, **kwargs):
         super().__init__(*args, **kwargs)

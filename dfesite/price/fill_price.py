@@ -4,13 +4,14 @@ import re
 import xlrd
 import docx
 import openpyxl
+import pandas as pd
 import dateparser
 from datetime import timedelta
 
 from django.db import transaction
 from django.conf import settings # correct way for access BASE_DIR, MEDIA_DIR...
 
-from .class_webnews import NewsStat, NewsStatDetail
+from .class_webnews import NewsStat, NewsStatDetail, PriceStat
 from .class_filehandle import WebFile, DocxFile
 from .models import PriceNews, PriceData, PricePetrolHead, PricePetrolData
 from industry import send_msg
@@ -25,6 +26,7 @@ SEARCH_TXT2 = 'Нарьян-Мар'
 CUT_NM = ' и г.Нарьян-Мару'
 SEARCH_NEWS_TXT = ' на отдельные потребительские товары'
 SEARCH_PETROL_TXT = ' на бензин'
+WEBPAGE = 'https://29.rosstat.gov.ru/prices111'
 
 
 # Функции добавления в БД
@@ -119,6 +121,21 @@ def data_xls(xls):  # предыдущая версия data_xls(xls, search_txt
 #--------------------------------
 
 
+def read_xl(xlsx):
+    df = pd.read_excel(xlsx)
+    if any(df.iloc[:, 0].str.match(SEARCH_TXT1)):
+        xls_title = re.sub(r'\s+', ' ', df.columns[0].replace(CUT_NM, ''))
+        row_first = df.index[df.iloc[:, 0].str.match(SEARCH_TXT1)][0]
+        row_last = df.index[df.iloc[:, 0].str.match(SEARCH_TXT2)][0]
+        df1 = df.iloc[row_first + 1:row_last, 0:2]
+        # df1.rename(columns={df1.columns[0]: "Товар (услуга)", df1.columns[1]: "Цена, рублей"}, inplace=True)
+        # df.reset_index(drop=True, inplace=True)
+        print('Обработка Excel файла успешно завершена.\n')
+        return xls_title, df1[df1.columns[0]].tolist(), df1[df1.columns[1]].tolist()
+    print()
+    return "", None, None
+
+
 def data_openpyxl(xlsx, search_txt):
     j = 0
     data_i = 0
@@ -173,7 +190,7 @@ def check_db(news_date, is_petrol):
         db_data = PricePetrolHead.objects.all()
     else:
         db_data = PriceNews.objects.all()
-    for i in range(len(db_data)):
+    for i in range(len(db_data)-1, 0, -1):  # начинаем проверку с даты, добавленной последним
         if news_date.date() == db_data[i].pub_date.date():
             data_exists = 1
             print(f'Данные уже в базе!')
@@ -184,7 +201,7 @@ def check_db(news_date, is_petrol):
 
 
 # ---Добавление данных с сайта---
-def search_news(idx, page, news_text):
+def search_price(idx, page, news_text):
     """
     Поиск новости news_text
     :param idx: номер новости на веб-странице
@@ -192,46 +209,48 @@ def search_news(idx, page, news_text):
     :param news_text: искомая новость
     :return: list[news_count, title, href, pub_date, file]
     """
-    nao = 'Ненецкий'
     app_dir = 'price'
-    webpage = 'https://29.rosstat.gov.ru/news?page=' + str(page)
-    news = []
+    price_avg = []
     # 0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
-    stat = NewsStat(idx, news_text, webpage, HEADER)
-    if stat.acount:
-        news.append(stat.acount)
-        news.append(stat.get_title())
-        news.append(stat.get_href())
-        stat_detail = NewsStatDetail(nao, stat.get_href(), HEADER)
-        news.append(stat_detail.pub_date)
+    stat = PriceStat(idx, news_text, page, HEADER)
+    if stat.div_count:
+        price_avg.append(stat.div_count)
+        price_avg.append(stat.get_title())
+        if stat.get_href() == "#":  # Если нет ссылки, то оставляем общую
+            price_avg.append(stat.webfile_link)
+        else:
+            price_avg.append(stat.get_href())
+        price_avg.append(stat.get_pub_date())
         year = re.findall(r'\d{4}', stat.get_title())[0]
-        stat_file = WebFile(stat_detail.file_href, MEDIA, app_dir, year, stat_detail.file_name)
+        stat_file = WebFile(stat.webfile_href, MEDIA, app_dir, year, stat.webfile_name)
         stat_file.download_file()
         file = stat_file.file_path
-        filename, file_extension = os.path.splitext(file)
+        file_extension = os.path.splitext(file)[1]
         if news_text == SEARCH_PETROL_TXT:
             if file_extension.lower() == '.docx' or file_extension.lower() == '.doc':
-                file = DocxFile(MEDIA, app_dir, year, stat_detail.file_name).get_docx()
-        news.append(file)
-        return news
+                file = DocxFile(MEDIA, app_dir, year, os.path.split(file)[1]).get_docx()
+        price_avg.append(file)
+
+        return price_avg
     return None
 
 
-def mid_news(news_num, page):
+def mid_data(news_num):
     """
-    Поиск новости 'Средние цены и их изменение на отдельные потребительские товары' по вхождению слова 'потребительские'
+    Поиск статданных 'Средние цены на отдельные потребительские товары'
     с индексом (news_num) на веб странице 'https://29.rosstat.gov.ru/news?page=' + str(page)
     Добавление найденных данных в БД
     Возвращает количество найденных новостей на странице
     0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
     """
-    newsdata = search_news(news_num, page, SEARCH_NEWS_TXT)
+    news_id = None
+    newsdata = search_price(news_num, WEBPAGE, SEARCH_NEWS_TXT)
     all_news = PriceNews.objects.all().order_by('-pub_date')
     if newsdata is not None:
         for news in all_news:  # добавлена проверка, т.к. на сайте статистики м.б. ошибочная дата в заголовке
             if news.title == newsdata[1] and news.pub_date != newsdata[3]:
                 previous_news = news.get_previous_by_pub_date()
-                pattern = re.compile('\d{1,2}\s[яфмаисонд][а-я]+[а|я]\s\d{4}')
+                pattern = re.compile(r'\d{1,2}\s[яфмаисонд][а-я]+[а|я]\s\d{4}')
                 previous_news_title_date = dateparser.parse(re.search(pattern, previous_news.title).group())
                 # т.к. данные обновляются еженедельно, то к предыдущей дате добавляем 7 дней
                 newsdate = previous_news_title_date + timedelta(days=7)
@@ -246,22 +265,22 @@ def mid_news(news_num, page):
             # определяем ID новости, к нему будут привязаны данные
             news_id = add_news(newsdata[1], newsdata[2], newsdata[3])
             xls_file = newsdata[4]
-            xl_title, products, prices = data_xls(xls_file)
+            xl_title, products, prices = read_xl(xls_file)
             for p in range(len(products)):  # кол-во строк с ценами на товары
                 add_data(news_id, products[p], prices[p])
         return newsdata[0], data_in, news_id
+
     return 0, None, None
 
 
-def pet_news(news_num, page):
+def pet_data(news_num):
     """
-    Поиск новости 'О потребительских ценах на бензин')
-    с индексом (news_num) на веб странице 'https://29.rosstat.gov.ru/news?page=' + str(page)
+    Поиск новости 'О потребительских ценах на бензин' на странице 'https://29.rosstat.gov.ru/prices111'
     Добавление найденных данных в БД
     Возвращает количество найденных новостей на странице
     """
     # [0] количество новостей, [1] заголовок, [2] ссылка, [3] дата, [4] файл
-    newsdata = search_news(news_num, page, SEARCH_PETROL_TXT)
+    newsdata = search_price(news_num, WEBPAGE, SEARCH_PETROL_TXT)
     if newsdata is not None:
         data_in = check_db(newsdata[3], 1)
         if data_in == 0:
@@ -269,6 +288,7 @@ def pet_news(news_num, page):
             if not isinstance(newsdata[4], str):
                 print('============== pet_news: DOC FILE ===============')
                 pet_title, pet_name, pet_price = data_docx(newsdata[4])
+
                 for p in range(len(pet_name)):  # кол-во строк с ценами на товары
                     add_petdata(pethead_id, pet_name[p], pet_price[p])
             else:
@@ -280,7 +300,7 @@ def pet_news(news_num, page):
     return 0
 
 
-def from_web(page):
+def from_web():
     mid_num = 0
     mid_count = 1
     pet_num = 0
@@ -288,158 +308,29 @@ def from_web(page):
     data_in_db = 0
 
     while mid_num < mid_count:
-        print('mid_news RUNNING...')
-        mid_count, data_in_db, midnews_id = mid_news(mid_num, page)
-        # if data_in_db == 1:  # при
-        #     return data_in_db
+        print('mid_data RUNNING...')
+        mid_count, data_in_db, midnews_id = mid_data(mid_num)
         mid_num += 1
 
     while pet_num < pet_count:
         print('pet_news RUNNING...')
-        pet_count = pet_news(pet_num, page)
+        pet_count = pet_data(pet_num)
         pet_num += 1
     return data_in_db, midnews_id
-#--------------------------------
-# 2020. Загрузка данных из ранее скачанных файлов
-def from_xlsdocx(path):
-    for filename in os.listdir(path):
-        # print(os.path.join(path, filename))
-        if filename.endswith(".xls") or filename.endswith(".xlsx"):
-            xl_title, products, prices = data_xls(os.path.join(path, filename))
-            xl_date = cut_date(xl_title)
-            data_in = check_db(xl_date, 0)
-            if data_in == 0:
-                news_id = add_news(xl_title, '', xl_date)
-                for p in range(len(products)):  # кол-во строк с ценами на товары
-                    add_data(news_id, products[p], prices[p])
-        elif filename.endswith(".docx"):
-            doc_title, products, prices = data_docx(docx.Document(os.path.join(path, filename)))
-            doc_date = cut_date(doc_title)
-            data_in = check_db(doc_date, 1)
-            if data_in == 0:
-                news_id = add_pethead(doc_title, '', doc_date)
-                for p in range(len(products)):  # кол-во строк с ценами на товары
-                    add_petdata(news_id, products[p], prices[p])
-        else:
-            continue
-#----------------------------------------------------
-# 2019-2018. Загрузка данных из ранее скачанных файлов
-def data_xlsm(xls, product_column):
-    """
-    Обработка старых XLSM файлов
-    :param xls: полный путь к файлу Excel
-    :param product_column: колонка 0(A) - бензин, колонка 4(E) - товар
-    :return: заголовок, товар, цена
-    """
-    j = 0
-    i_begin = 0
-    i_end = 0
-    regex_nao = re.compile('в том числе Ненецкий')
-    regex_arh = re.compile('без Ненецкого')
-    regex_milk = re.compile('Молоко питьевое')
-    wb = xlrd.open_workbook(xls)
-    ws = wb.sheet_by_index(0)
 
-    if product_column:
-        title = re.sub('\s+', ' ', ws.cell_value(0, 4)) + ' ' + re.sub('\s+', ' ', ws.cell_value(1, 4))
-    else:
-        title = re.sub('\s+', ' ', ws.cell_value(0, 0)) + ' ' + re.sub('\s+', ' ', ws.cell_value(1, 0))[:-2]
-
-    for i in range(ws.nrows):
-        if re.search(regex_nao, ws.cell_value(i, product_column)):
-            i_begin = i
-        if re.search(regex_arh, ws.cell_value(i, product_column)):
-            i_end = i
-            break
-    if not i_begin:
-        print('Ошибка структуры файла!\nПрограмма завершена.')
-        sys.exit()
-
-    rows_count = i_end - i_begin - 1
-    col_name = [''] * rows_count
-    col_price = [0.0] * rows_count
-    for i in range(i_begin+1, i_end):
-        if re.search(regex_milk, ws.cell_value(i, product_column)):
-            col_name[j] = f"{ws.cell_value(i, product_column)} {ws.cell_value(i + 1, product_column)}"
-            try:
-                col_price[j] = float(re.sub(r',', '.', ws.cell_value(i, product_column+1)))
-            except TypeError:
-                col_price[j] = ws.cell_value(i, product_column+1)
-            j += 1
-            continue
-        elif ws.cell_value(i, product_column) != '' and ws.cell_value(i, product_column+1) != '':
-            col_name[j] = ws.cell_value(i, product_column)
-            try:
-                col_price[j] = float(re.sub(r',', '.', ws.cell_value(i, product_column+1)))
-            except TypeError:
-                col_price[j] = ws.cell_value(i, product_column+1)
-            j += 1
-            continue
-        elif ws.cell_value(i, product_column) != '' and ws.cell_value(i, product_column+1) == '' \
-                and product_column == 0:
-            col_name[j] = ws.cell_value(i, product_column)
-            try:
-                col_price[j] = float(re.sub(r',', '.', ws.cell_value(i+1, product_column+1)))
-            except TypeError:
-                col_price[j] = ws.cell_value(i+1, product_column+1)
-            j += 1
-            continue
-    excess = rows_count - j  # излишне созданные данные в списке
-    print('Обработка Excel файла успешно завершена.\n')
-    return title.strip(), col_name[:-excess], col_price[:-excess]
-
-
-def from_xlsm(path):
-    column_list = [0, 4]
-    for filename in os.listdir(path):
-        if filename.endswith(".xlsm"):
-            for column in column_list:
-                xl_title, products, prices = data_xlsm(os.path.join(path, filename), column)
-                xl_date = cut_date(xl_title)
-                if column:  # колонка не равна 0, т.е. не бензин
-                    data_in = check_db(xl_date, 0)
-                    if data_in == 0:
-                        news_id = add_news(xl_title, '', xl_date)
-                        for p in range(len(products)):  # кол-во строк с ценами на товары
-                            add_data(news_id, products[p], prices[p])
-                else:  # добавляем в базу данные по бензину
-                    data_in = check_db(xl_date, 1)
-                    if data_in == 0:
-                        news_id = add_pethead(xl_title, '', xl_date)
-                        for p in range(len(products)):  # кол-во строк с ценами на товары
-                            add_petdata(news_id, products[p], prices[p])
-#----------------------------------------------------
-# Добавление данных из файлов xls, docx (2020)
-# files_dir = "d:/code/python/study/djangoproject/dfesite/media/price/__source/2020"
-# from_xlsdocx(files_dir)
-
-#----------------------------------------------------
-# Добавление данных из файлов xlsm (2019)
-# files_dir = "d:/code/python/study/djangoproject/dfesite/media/price/__source/2019"
-# from_xlsm(files_dir)
-
-#----------------------------------------------------
-# Добавление данных с сайта
 
 @transaction.atomic
 def populate():
-    page_num = 1
     print('============== PRICE BEGIN ===============')
-    while page_num < 3:
-        print(f'page={page_num}')
-        try:
-            data_exist, mnews_id = from_web(page_num)
-            if data_exist == 1:
-                print('===========PRICE DATA EXIST===========')
-                break
-            page_num += 1
-            current_news = PriceNews.objects.get(id=mnews_id)
-            if current_news:
-                print(f'current_news.id={current_news.id}')
-        except Exception as e:
-            print(e)
+    try:
+        data_exist, mnews_id = from_web()
+        if data_exist == 1:
+            print('===========PRICE DATA EXIST===========')
+        current_news = PriceNews.objects.get(id=mnews_id)
+        if current_news:
+            print(f'current_news.id={current_news.id}')
+    except Exception as e:
+        print("fillprice.populate() procedure Exception error:")
+        print(e)
     print('============== PRICE END ===============')
-
-# if __name__ == "__main__":
-#     populate()
 
