@@ -295,6 +295,7 @@ def populate():
         current_news = PriceNews.objects.get(id=mnews_id)
         if current_news:
             print(f'current_news.id={current_news.id}')
+            send_msg.sending('price', current_news.id, current_news.title)
     except Exception as e:
         print("fillprice.populate() procedure Exception error:")
         print(e)
