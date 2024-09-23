@@ -88,48 +88,14 @@ def data_docx(doc):
     return pet_head, pet_name, pet_price
 
 
-def data_xls(xls):  # предыдущая версия data_xls(xls, search_txt)
-    j = 0
-    data_begin = 0
-    data_end = 0
-    wb = xlrd.open_workbook(xls)
-    ws = wb.sheet_by_index(0)
-
-    # удаляем из заголовка все лишние пробелы, символы новой строки и подстроку CUT_NM
-    xls_title = re.sub('\s+', ' ', ws.cell_value(0, 0)).replace(CUT_NM, '')
-    for i in range(ws.nrows):
-        if re.search(SEARCH_TXT1, ws.cell_value(i, 0)):
-            data_begin = i
-        if re.search(SEARCH_TXT2, ws.cell_value(i, 0)):
-            data_end = i
-    if not data_begin:
-        print(f'Ошибка!\nНе найден заголовок, содержащий слова "{SEARCH_TXT1}". Проверьте файл!\nПрограмма завершена.')
-        sys.exit()
-
-    # rows_count = ws.nrows - data_i
-    rows_count = data_end - (data_begin + 1)  # начало: data_begin+1
-    col_name = [''] * rows_count
-    col_price = [0.0] * rows_count
-
-    for i in range(data_begin+1, data_end):
-        col_name[j] = ws.cell_value(i, 0)
-        col_price[j] = ws.cell_value(i, 1)
-        j += 1
-
-    print('Обработка Excel файла успешно завершена.\n')
-    return xls_title, col_name, col_price
-#--------------------------------
-
-
 def read_xl(xlsx):
     df = pd.read_excel(xlsx)
     if any(df.iloc[:, 0].str.match(SEARCH_TXT1)):
         xls_title = re.sub(r'\s+', ' ', df.columns[0].replace(CUT_NM, ''))
+        df.iloc[:, 0] = df.iloc[:, 0].str.strip()  # удаляем начальные и конечные
         row_first = df.index[df.iloc[:, 0].str.match(SEARCH_TXT1)][0]
-        row_last = df.index[df.iloc[:, 0].str.match(SEARCH_TXT2)][0]
+        row_last = df.index[df.iloc[:, 0].str.contains(SEARCH_TXT2)][0]
         df1 = df.iloc[row_first + 1:row_last, 0:2]
-        # df1.rename(columns={df1.columns[0]: "Товар (услуга)", df1.columns[1]: "Цена, рублей"}, inplace=True)
-        # df.reset_index(drop=True, inplace=True)
         print('Обработка Excel файла успешно завершена.\n')
         return xls_title, df1[df1.columns[0]].tolist(), df1[df1.columns[1]].tolist()
     print()
@@ -334,3 +300,46 @@ def populate():
         print(e)
     print('============== PRICE END ===============')
 
+
+#Data adding into database from files
+#def mid_data(wrkdir):
+#    """ Добавление средних цен товаров из xlsx """
+#    del_naonm = "по Ненецкому автономному округу и г. Нарьян-Мару "
+#    goods_files = [f for f in os.listdir(wrkdir) if ".xlsx" in f.lower()]
+#    print("FIIIIIIIIIIIIIIIIIIIIIIIIIIIIILLLLLLLLLLLLLLLLLLLLLLLLLLLEEEEEEEEEEEEEEEEEEE")
+#    print(goods_files)
+#    goods_all = PriceNews.objects.all().order_by("pub_date")
+#    print(goods_all)
+#
+#    for f in goods_files:
+#        xl_title, products, prices = read_xl(f"{wrkdir}/{f}")
+#        goods_title = xl_title.replace(del_naonm, "")
+#        for good in goods_all:
+#            if goods_title == good.title:
+#                for p in range(len(products)):  # кол-во строк с ценами на товары
+#                    add_data(good.id, products[p], prices[p])
+#
+#
+#def pet_data(wrkdir):
+#    """ Добавление средних цен на топливо из docx """
+#    from docx import Document
+#    del_str = [" по Ненецкому автономному округу и городу Нарьян-Мару", " (по выборочному кругу автозаправочных станций)"]
+#    petrol_files = [f for f in os.listdir(wrkdir) if ".docx" in f.lower()[-5:]]  # последние 5 символов
+#    for f in petrol_files:
+#        pet_title, pet_name, pet_price = data_docx(Document(f"{wrkdir}/{f}"))
+#        pet_title = re.sub(r'\s+', ' ', pet_title).strip()  # нормализация заголовка
+#        petrol_title = pet_title.replace(del_str[0], "").replace(del_str[1], "")  # удаление из заголовка
+#        petrol_pubdate = cut_date(petrol_title) + timedelta(days=2)     # дата публикации на 2 дня позже
+#        pethead_id = add_pethead(petrol_title, WEBPAGE, petrol_pubdate)
+#        for p in range(len(pet_name)):  # кол-во строк с ценами на товары
+#            add_petdata(pethead_id, pet_name[p], pet_price[p])
+#
+#
+#@transaction.atomic
+#def populate():
+#    """ Data adding into database from files """
+#    print("-----------------------PRICE BEGIN--------------------------")
+#    work_dir = "/home/sa/projects/dfeweb/dfesite/media/price/2024/lost"
+#    mid_data(work_dir)
+#    pet_data(work_dir)
+#    print("-----------------------PRICE END--------------------------")
