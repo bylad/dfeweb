@@ -211,7 +211,9 @@ def mid_data(news_num):
     """
     news_id = None
     newsdata = search_price(news_num, WEBPAGE, SEARCH_NEWS_TXT)
-    all_news = PriceNews.objects.all().order_by('-pub_date')
+    # all_news = PriceNews.objects.all().order_by('-pub_date')  # .all() - следует избегать такой конструкции
+    lastdb_news = PriceNews.objects.last()
+    all_news = PriceNews.objects.filter(pub_date__year=f"{lastdb_news.pub_date.year}").order_by('-pub_date')
     if newsdata is not None:
         for news in all_news:  # добавлена проверка, т.к. на сайте статистики м.б. ошибочная дата в заголовке
             if news.title == newsdata[1] and news.pub_date != newsdata[3]:
