@@ -2,9 +2,9 @@ import os
 import re, requests
 import subprocess
 from bs4 import BeautifulSoup
-import datetime
 import dateparser
 import docx
+from datetime import datetime as dt
 from transliterate import translit
 
 from django.conf import settings # correct way for access BASE_DIR, MEDIA_DIR...
@@ -14,6 +14,7 @@ from . import  send_msg
 from django.db import transaction
 
 MEDIA = settings.MEDIA_DIR
+WEBPAGE = 'https://29.rosstat.gov.ru/production111'  # Поиск оперативной инфоромации
 
 
 class NewsLocate:
@@ -29,16 +30,6 @@ class NewsLocate:
                 news_date = '9 сентября 1999'
                 print("Attribute Error! News date was dropped!")
             self.publicated = dateparser.parse(news_date)
-
-
-class NewsDetail:
-    def __init__(self, web, HEADER, txt):
-        arh = 'https://29.rosstat.gov.ru'
-        news_soup = BeautifulSoup(requests.get(web, headers=HEADER).content, 'html.parser')
-        news_desc = news_soup.find('div', {'class': 'document-list__item-title'}, text=re.compile('Ненецкий')).parent
-        news_atag = news_desc.find_previous_sibling().find('a')
-        self.path, self.file_name = os.path.split(arh + news_atag.get('href'))
-        self.file_href = requests.get(arh + news_atag.get('href'))
 
 
 def date_int(newstitle):
@@ -183,46 +174,70 @@ def create_db(id_news, t1, t2, is_january):
         add_table_production(id_news, t2[row][0], t2[row][1], t2[row][2])
 
 
-def last_added_news(HEADER):
-    page = 1
-    news_db_dates_diff = 100
+# Функция добавления данных по производству
+def last_added_news(header):
+    dict_key = None
     try:
         last_db_date = IndustryNews.objects.last().pub_date
-    except AttributeError:
-        last_db_date = datetime.datetime(2019, 9, 16, 0, 0)
-    while True:
-        url = 'https://29.rosstat.gov.ru/news?page=' + str(page)
-        stat_news = NewsLocate(url, HEADER, 'О промышленном производстве')
-        if stat_news.atag is not None:
-            news_date = stat_news.publicated
-            news_db_dates_diff = (news_date - last_db_date).days
-            print(f'page={page}, site={news_date}, db={last_db_date}')
-            print(f'(news_date - db_date) = {news_db_dates_diff}')
-            print(f'{stat_news.atag}')
-            if news_db_dates_diff < 8:
-                return page - 1
-            # else:
-            #    print('\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
-            #    print('ВНИМАНИЕ! Проверьте дату публикации новости на сайте и дату создания файла с данными.')
-            #    print('При разнице между ними > 7 новость не будет добавлена!')
-            #    print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n')
-        page += 1
+    except AttributeError:  # datetime.now().year - текущий год в формате int
+        last_db_date = dt(dt.now().year - 1, 1, 1, 0, 0)
+
+    url = WEBPAGE
+    stat_news = NewsLocate(url, header, 'О промышленном производстве')
+
+    # Создание списка тегов div из найденных заголовков
+    all_inds = stat_news.soup.find_all('div', text=re.compile('О промышленном производстве'))
+
+    # re.sub(r'\s+', '', x.text).strip(): x.text - выделение заголовка. Удаление перевода строк, нач. и конечн. пробелов
+    industry_heads = [re.sub(r'\s+', ' ', x.text).strip() for x in all_inds if str(dt.now().year) in x.text]
+
+    # WEBPAGE.rsplit('/', 1)[0] - разделение строки на 2 подстроки, где символом разделения является слеш справа
+    # x.find_parent().find_parent().find('a').get('href') - переход на 2 позиции выше, поиск тега 'a', извлечение 'href'
+    industry_hrefs = [f"{WEBPAGE.rsplit('/', 1)[0]}{x.find_parent().find_parent().find('a').get('href')}"
+                      for x in all_inds if str(dt.now().year) in x.text]
+
+    date_pattern = r'\d{2}\.\d{2}\.\d{4}'
+    # Извлечение даты как текст и преобразование в datetime
+    industry_dates = [dt.strptime(re.search(date_pattern, x.find_next_sibling().text).group(0), '%d.%m.%Y')
+                      for x in all_inds if str(dt.now().year) in x.text]
+
+    # Если последняя дата из БД совпадает с 1-ой найденной на сайте, то возвращаем пустой словарь
+    last_db_date_index = industry_dates.index(last_db_date)
+    print(f"index: {last_db_date_index}")
+    if last_db_date in industry_dates and last_db_date_index == 0:
+        print("Последняя дата из БД совпадает с 1-ой найденной на сайте, => словарь пустой")
+        return {}
+    elif last_db_date_index == 1:
+        print(f"    {industry_dates[0]}: ({industry_heads[0]}, {industry_hrefs[0]})")
+        return {industry_dates[0]: (industry_heads[0], industry_hrefs[0])}
+
+    heads_hrefs = zip(industry_heads, industry_hrefs)
+    industry_dict = dict(zip(industry_dates, heads_hrefs))
+
+    for k in industry_dict:
+        if k == last_db_date:
+            dict_key = k
+    if dict_key:
+        del industry_dict[dict_key]
+
+    return industry_dict
 
 
-def create_file(news, HEADER, year):
-    news_item = NewsDetail(news.atag.get('href'), HEADER, 'Ненецкому')
+def create_file(file_href, year):
+    file_name = os.path.split(file_href)[1]
     dir_path = os.path.join(MEDIA, 'industry', f'{year}')
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    f_path = os.path.join(dir_path, news_item.file_name)
-    # Если файла нет, то скачиваем
+    f_path = os.path.join(dir_path, file_name)
+
+    # Если файла нет, то скачиваем с помощью requests.get
     if not os.path.exists(f_path):
         with open(f_path, 'wb') as f:
-            f.write(news_item.file_href.content)
+            f.write(requests.get(file_href).content)
 
     # Перевод doc файла в docx
-    if not os.path.exists(f_path+'x'):
+    if not os.path.exists(f"{f_path}x"):
         doc2docx(dir_path)
 
     docx_file = docx.Document(f_path+'x')
@@ -233,24 +248,16 @@ def create_file(news, HEADER, year):
 @transaction.atomic
 def populate():
     print("-----------------------INDUSTRY BEGIN--------------------------")
-    page = last_added_news(HEADER)
-    while page > 0:
-        print(f'industry.populate page={page}')
-        url = 'https://29.rosstat.gov.ru/news?page=' + str(page)
-        stat = NewsLocate(url, HEADER, 'О промышленном производстве')
-        # Если на текущей странице новость не найдена, то переходим к следующей
-        if not stat.atag:
-            page -= 1
-            continue
-        a_title = stat.atag.text
-        b_href = stat.atag.get('href')
-        c_date = stat.publicated
-        title_date = date_int(a_title)
+    head_dict = last_added_news(HEADER)  # словарь вида dict{date: (title, href)}; 0-title, 1-href
+    keys_list = list(reversed(head_dict.keys()))  # сортируем даты по возрастанию
+    for k in keys_list:
+        title_date = date_int(head_dict[k][0])  # преобразуем "в январе-марте 2024" в список [2024, 1, 3]
 
         # Заходим в новость, сохраняем файл (запоминаем файл docx и путь к нему)
-        docxfile, pwd = create_file(stat, HEADER, str(title_date[0])) 
+        docxfile, pwd = create_file(head_dict[k][1], str(title_date[0]))
+
         # Добавляем в БД, определяем id новости
-        news_id = add_news(a_title, b_href, c_date)
+        news_id = add_news(head_dict[k][0], head_dict[k][1], k)
 
         # Выкопировка двух таблиц, учитываем январь (в табл.1 визуально меньше столбцов, по факту - нет)
         is_jan = False
@@ -258,12 +265,12 @@ def populate():
             is_jan = True
 
         table1, table2 = table_doc(docxfile)
+
         # Значения из str в float
         table1_float = floating(2, table1)
         table2_float = floating(1, table2)
         create_db(news_id, table1_float, table2_float, is_jan)
-
-        page -= 1
         print('--------------------------------------------------------')
+        print(f"Добавление данных за {k.strftime('%d.%m.%Y')} завершено")
     print("-----------------------INDUSTRY END--------------------------")
 
