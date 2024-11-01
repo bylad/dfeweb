@@ -276,12 +276,12 @@ def from_web():
     data_in_db = 0
 
     while mid_num < mid_count:
-        print('mid_data RUNNING...')
+        print(f'mid_data RUNNING... mid_num={mid_num} < mid_count={mid_count}')
         mid_count, data_in_db, midnews_id = mid_data(mid_num)
         mid_num += 1
 
     while pet_num < pet_count:
-        print('pet_news RUNNING...')
+        print(f'pet_news RUNNING... pet_num={pet_num} < pet_count={pet_count}')
         pet_count = pet_data(pet_num)
         pet_num += 1
     return data_in_db, midnews_id
@@ -321,6 +321,10 @@ def populate():
 #            if goods_title == good.title:
 #                for p in range(len(products)):  # кол-во строк с ценами на товары
 #                    add_data(good.id, products[p], prices[p])
+#        goods_pubdate = cut_date(goods_title) + timedelta(days=2)  # публикуется на 2 дня позже
+#        news_id = add_news(goods_title, WEBPAGE, goods_pubdate)
+#        for p in range(len(products)):  # кол-во строк с ценами на товары
+#            add_data(news_id, products[p], prices[p])
 #
 #
 #def pet_data(wrkdir):
