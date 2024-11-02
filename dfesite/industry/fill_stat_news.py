@@ -76,11 +76,9 @@ def table_doc(doc):
             if table_columns != 3 or table_columns != 4: 
                 print(f'Внимание! Изменилась структура таблицы, проверьте скачанный файл.')
                 print(f'Количество столбцов в таблице t[{t}] = {table_columns}.')
-            # os.system("pause")
         elif t == 1 and table_columns != 3:
             print(f'Внимание! Изменилась структура таблицы, проверьте скачанный файл.')
             print(f'Количество столбцов в таблице t[{t}] = {table_columns}.')
-            # os.system("pause")
 
         for i, row in enumerate(table.rows):
             text = (cell.text for cell in row.cells)
@@ -107,7 +105,6 @@ def floating(start, t):
 def add_news(data_title, data_href, data_date):
     IndustryNews.objects.get_or_create(title=data_title, href=data_href, pub_date=data_date)
     current_news = IndustryNews.objects.get(title=data_title)
-    send_msg.sending('industry', current_news.id, current_news.title)
     return current_news.id
 
 
@@ -176,7 +173,7 @@ def create_db(id_news, t1, t2, is_january):
 
 # Функция добавления данных по производству
 def last_added_news(header):
-    dict_key = None
+    industry_dict = dict()
     try:
         last_db_date = IndustryNews.objects.last().pub_date
     except AttributeError:  # datetime.now().year - текущий год в формате int
@@ -202,24 +199,13 @@ def last_added_news(header):
                       for x in all_inds if str(dt.now().year) in x.text]
 
     # Если последняя дата из БД совпадает с 1-ой найденной на сайте, то возвращаем пустой словарь
-    last_db_date_index = industry_dates.index(last_db_date)
-    print(f"index: {last_db_date_index}")
+    last_db_date_index = industry_dates.index(last_db_date)  # Определяем индекс даты из БД в списке дат с сайта Росстата
     if last_db_date in industry_dates and last_db_date_index == 0:
         print("Последняя дата из БД совпадает с 1-ой найденной на сайте, => словарь пустой")
         return {}
-    elif last_db_date_index == 1:
-        print(f"    {industry_dates[0]}: ({industry_heads[0]}, {industry_hrefs[0]})")
-        return {industry_dates[0]: (industry_heads[0], industry_hrefs[0])}
 
-    heads_hrefs = zip(industry_heads, industry_hrefs)
-    industry_dict = dict(zip(industry_dates, heads_hrefs))
-
-    for k in industry_dict:
-        if k == last_db_date:
-            dict_key = k
-    if dict_key:
-        del industry_dict[dict_key]
-
+    for i in range(last_db_date_index):  # Добавляем в словарь данные до даты из БД
+        industry_dict.update({industry_dates[i]: (industry_heads[i], industry_hrefs[i])})
     return industry_dict
 
 
@@ -230,6 +216,12 @@ def create_file(file_href, year):
         os.makedirs(dir_path)
 
     f_path = os.path.join(dir_path, file_name)
+
+    for f in [f_path, f"{f_path}x"]: # .doc и .docx
+        # Если файл существует и его размер < 5Kb, то удаляем (файл пустой)
+        if os.path.exists(f) and os.stat(f).st_size < 5000:
+            os.remove(f)
+            print(f"File '{f}' removed.")
 
     # Если файла нет, то скачиваем с помощью requests.get
     if not os.path.exists(f_path):
@@ -270,7 +262,9 @@ def populate():
         table1_float = floating(2, table1)
         table2_float = floating(1, table2)
         create_db(news_id, table1_float, table2_float, is_jan)
+
         print('--------------------------------------------------------')
         print(f"Добавление данных за {k.strftime('%d.%m.%Y')} завершено")
+        send_msg.sending('industry', news_id, head_dict[k][0])
     print("-----------------------INDUSTRY END--------------------------")
 
