@@ -27,7 +27,6 @@ SEARCH_ZAGS_LIST = ["Родившиеся", "Умершие", "браков", "�
 def add_migrhead(title, news_href, date):
     MigrationHead.objects.get_or_create(migration_title=title, href=news_href, pub_date=date)
     current_migrhead = MigrationHead.objects.get(migration_title=title)
-    # send_msg.sending('price', current_news.id, current_news.title)  # здесь срабатывала ложно
     return current_migrhead.id
 
 
@@ -57,6 +56,7 @@ def search_webdata(idx, search_text):
     webpage = 'https://29.rosstat.gov.ru/population111'
     # 0-количество, 1-заголовок, 2-ссылка, 3-дата, 4-файл (docx)
     population_info = []
+    print(f"\nsearch_webdata: idx={idx}, search_text='{search_text}', webpage={webpage}, HEADER={HEADER}\n")
     stat = PopulationStat(idx, search_text, webpage, HEADER)
     if stat.div_count:
         stat_href = stat.www + stat.get_href()
@@ -93,7 +93,9 @@ def data_docx(doc, doc_name):
             if i == 1:  # обработка 2-ой строки
                 try:
                     text = [" ".join(cell.text.split()) for cell in row.cells]
-                    tdata = [int(ele) for j, ele in enumerate(text) if j > 0]  # пропустить 1ый элемент
+                    # в таблице за январь 2024 меньше элементов. Изменил условие, где данные идут после типов string
+                    # .lstrip("-") удаляет знак "-" в отрицательных числах для прохождения условия isdigit()
+                    tdata = [int(ele) for ele in text if ele.lstrip("-").isdigit()]
                 except Exception:
                     print('Внимание! Изменилась структура таблицы. Проверьте исходный файл')
     else:
@@ -101,7 +103,9 @@ def data_docx(doc, doc_name):
             if i == 1:  # обработка 2-го столбца
                 try:
                     text = [" ".join(cell.text.split()) for cell in col.cells]
-                    tdata = [int(ele) for j, ele in enumerate(text) if j > 1]  # пропустить 1ые 2 элемента
+                    # в таблице за январь 2024 меньше элементов. Изменил условие, где данные идут после типов string
+                    # .lstrip("-") удаляет знак "-" в отрицательных числах для прохождения условия isdigit()
+                    tdata = [int(ele) for ele in text if ele.lstrip("-").isdigit()]
                     del tdata[2]  # удаляем элемент с индексом 2 (прирост)
                 except Exception:
                     print('Внимание! Изменилась структура таблицы. Проверьте исходный файл')
@@ -133,41 +137,42 @@ def putto_db(srch_txt):
     :param srch_txt: искомый текст
     """
     migrhead_pk = None
-    try:
-        db_migrhead = MigrationHead.objects.all().order_by('pub_date')
-        db_zagshead = ZagsHead.objects.all().order_by('pub_date')
-    except Exception as e:
-        db_migrhead = None
-        db_zagshead = None
-        if hasattr(e, 'message'):
-            print("Exception's message:", e.message)
-        else:
-            print('Exception:', e)
+    if srch_txt == SEARCH_MIGRATION:
+        head = MigrationHead
+    else:
+        head = ZagsHead
+    db_last = head.objects.last()
+    db_head = head.objects.filter(pub_date__year=f"{db_last.pub_date.year}").order_by('-pub_date')
+    db_dates = [obj.pub_date for obj in db_head]
 
     info = search_webdata(0, srch_txt)  # находим количество искомого
     # [news_count, title, href, pub_date, file]
     if info:
-        if db_migrhead.last().migration_title == info[1]:
-            return None
-        
-        if type(info[4]) is str:  # если тип строка, то это файл PDF, иначе DOCX
-            data_list = get_pdf_table(info[4])
+        news_count = info[0]  # фиксируем количество новостей после 1-го поиска
+        if news_count > 5:  # ограничиваем количество обрабатываемых новостей
+            news_count = 5
+    else:
+        news_count = 0
+
+    for i in range(news_count - 1):
+        if info[3] in db_dates:
+            info = search_webdata(i + 1, srch_txt)
+            continue
+        # выполняем обработку таблицы загруженного файла
+        if type(info[4]) is str:
+            data_list = get_pdfdf(info[4])
         else:
-            data_list = data_docx(info[4], info[1])  # аргумент1 - файл docx, аргумент2 - наименование файла
-        
-        if srch_txt == SEARCH_MIGRATION and db_migrhead:  # если ищем мигр.данные и они есть в БД
-            for db in db_migrhead:
-                if info[3] == db.pub_date:
-                    continue
-                else:
-                    migrhead_pk = add_migr(info, data_list)  # добавляем миграционные данные в БД
-        elif srch_txt == SEARCH_ZAGS and db_zagshead:  # если ищем мигр.данные и они есть в БД
-            for db in db_zagshead:
-                if info[3] == db.pub_date:
-                    continue
-                else:  # добавляем данные из реестра ЗАГС в БД
-                    add_zags(info, data_list)
-    return migrhead_pk
+            data_list = data_docx(info[4], info[1])
+
+        if srch_txt == SEARCH_MIGRATION:
+            migrhead_pk = add_migr(info, data_list)  # добавляем миграционные данные в БД
+        else:
+            add_zags(info, data_list)
+
+        info = search_webdata(i+1, srch_txt)
+
+    if migrhead_pk:
+        send_msg.sending('population', migrhead_pk, info[1])  # данные по миграции поступают позже ЗАГС
 
 
 @transaction.atomic
@@ -175,11 +180,6 @@ def populate():
     srch_list = [SEARCH_MIGRATION, SEARCH_ZAGS]
     print("-----------------------POPULATION BEGIN--------------------------")
     for look in srch_list:
-        migrtitle_id = putto_db(look)
-        if migrtitle_id:
-            current = MigrationHead.objects.get(id=migrtitle_id)
-            print(f'current_migr.id={current.id}')
-    if migrtitle_id:
-        send_msg.sending('population', current.id, current.migration_title)
+        putto_db(look)
     print("-----------------------POPULATION END--------------------------")
 
