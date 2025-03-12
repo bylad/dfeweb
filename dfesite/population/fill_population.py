@@ -63,7 +63,7 @@ def search_webdata(idx, search_text):
         stat_title = stat.get_title()
         year = re.search(r'\d{4}', stat_title).group()
         file_name = os.path.split(stat_href)[1]
-        file_requests = requests.get(stat_href)
+        file_requests = requests.get(stat_href, verify=False)
         stat_file = WebFile(file_requests, MEDIA, app_dir, year, file_name)
         stat_file.download_file()
 

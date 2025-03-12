@@ -1,8 +1,8 @@
 import os
 import sys
 import re
-import xlrd
-import docx
+#import xlrd
+#import docx
 import openpyxl
 import pandas as pd
 import dateparser
@@ -11,7 +11,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.conf import settings # correct way for access BASE_DIR, MEDIA_DIR...
 
-from .class_webnews import NewsStat, NewsStatDetail, PriceStat
+from .class_webnews import PriceStat
 from .class_filehandle import WebFile, DocxFile
 from .models import PriceNews, PriceData, PricePetrolHead, PricePetrolData
 from industry import send_msg
@@ -73,15 +73,15 @@ def data_docx(doc):
     ben = ['Бензин автомобильный марки АИ-92']
     if len(doc.tables) > 1:
         print('Внимание! Изменилось количество таблиц. Проверьте исходный файл.')
-        print('Обрабатывается 2-ая таблица...')
-    for i, row in enumerate(doc.tables[1].rows):
+        print('Обрабатывается 1-ая таблица...')
+    for i, row in enumerate(doc.tables[0].rows):
         for cell in row.cells:  # поиск строки с необх. данными
             if any(x in cell.text for x in ben):
                 ben_i = i
                 break
-        if ben_i <= i < len(doc.tables[1].rows) and j < 3:
-            pet_name[j] = doc.tables[1].cell(i, 0).text
-            pet_price[j] = float(re.sub(',', '.', doc.tables[1].cell(i, 1).text))
+        if ben_i <= i < len(doc.tables[0].rows) and j < 3:
+            pet_name[j] = doc.tables[0].cell(i, 0).text
+            pet_price[j] = float(re.sub(',', '.', doc.tables[0].cell(i, 1).text))
             j += 1
     pet_head = doc.tables[0].cell(0, 0).text.replace(CUT_NM, '')
     print('Обработка таблицы DOCX файла успешно завершена.\n')
@@ -150,20 +150,17 @@ def data_openpyxl(xlsx, search_txt):
 def check_db(news_date, is_petrol):
     """ Проверка наличия данных в базе (0 - нет, 1 - есть)
     is_petrol: цены на бензин (0 - нет, 1 - да)
+    return: 0 - данных в БД нет, 1 - данные в БД
     """
-    data_exists = 1
     if is_petrol:
         db_data = PricePetrolHead.objects.all()
     else:
         db_data = PriceNews.objects.all()
     for i in range(len(db_data)-1, 0, -1):  # начинаем проверку с даты, добавленной последним
         if news_date.date() == db_data[i].pub_date.date():
-            data_exists = 1
             print(f'Данные уже в базе!')
-            break
-        else:
-            data_exists = 0
-    return data_exists
+            return 1
+    return 0
 
 
 # ---Добавление данных с сайта---
@@ -175,9 +172,12 @@ def search_price(idx, page, news_text):
     :param news_text: искомая новость
     :return: list[news_count, title, href, pub_date, file]
     """
+    print(f"search_price({idx},{page},{news_text})")
     app_dir = 'price'
     price_avg = []
     # 0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
+    print("Begin PriceStat")
+    print(HEADER)
     stat = PriceStat(idx, news_text, page, HEADER)
     if stat.div_count:
         price_avg.append(stat.div_count)
@@ -190,12 +190,12 @@ def search_price(idx, page, news_text):
         year = re.findall(r'\d{4}', stat.get_title())[0]
         stat_file = WebFile(stat.webfile_href, MEDIA, app_dir, year, stat.webfile_name)
         stat_file.download_file()
-        file = stat_file.file_path
-        file_extension = os.path.splitext(file)[1]
+        filename = stat_file.file_path
+        file_extension = os.path.splitext(filename)[1]
         if news_text == SEARCH_PETROL_TXT:
             if file_extension.lower() == '.docx' or file_extension.lower() == '.doc':
-                file = DocxFile(MEDIA, app_dir, year, os.path.split(file)[1]).get_docx()
-        price_avg.append(file)
+                filename = DocxFile(MEDIA, app_dir, year, os.path.split(filename)[1]).get_docx()
+        price_avg.append(filename)
 
         return price_avg
     return None
@@ -209,6 +209,7 @@ def mid_data(news_num):
     Возвращает количество найденных новостей на странице
     0-количество новостей, 1-заголовок, 2-ссылка, 3-дата, 4-файл (либо путь к xl, либо объект docx)
     """
+    print("mid_data ---------------------------------")
     news_id = None
     newsdata = search_price(news_num, WEBPAGE, SEARCH_NEWS_TXT)
     # all_news = PriceNews.objects.all().order_by('-pub_date')  # .all() - следует избегать такой конструкции
@@ -248,6 +249,7 @@ def pet_data(news_num):
     Возвращает количество найденных новостей на странице
     """
     # [0] количество новостей, [1] заголовок, [2] ссылка, [3] дата, [4] файл
+    print("pet_data ---------------------------------")
     newsdata = search_price(news_num, WEBPAGE, SEARCH_PETROL_TXT)
     if newsdata is not None:
         data_in = check_db(newsdata[3], 1)
@@ -264,8 +266,9 @@ def pet_data(news_num):
                 pet_name, pet_price = data_openpyxl(newsdata[4], 'Нарьян-Мар')
                 for p in range(len(pet_name)):  # кол-во строк с ценами на товары
                     add_petdata(pethead_id, pet_name[p], pet_price[p])
-        return newsdata[0]
-    return 0
+        print(f"newsdata[0]={newsdata[0]}, data_in={data_in}")
+        return newsdata[0], data_in
+    return 0, None
 
 
 def from_web():
@@ -282,7 +285,7 @@ def from_web():
 
     while pet_num < pet_count:
         print(f'pet_news RUNNING... pet_num={pet_num} < pet_count={pet_count}')
-        pet_count = pet_data(pet_num)
+        pet_count, petdata_in_db = pet_data(pet_num)
         pet_num += 1
     return data_in_db, midnews_id
 

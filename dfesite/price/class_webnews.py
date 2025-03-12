@@ -90,6 +90,8 @@ class PriceStat(NewsLocate):
     def __init__(self, idx, txt, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        print(self.request)
+
         all_divs = self.soup.findAll('div', attrs={"class": "document-list__item"})
         div_list = create_mydiv_list(all_divs, txt)
         self.div_count = len(div_list)
@@ -98,7 +100,7 @@ class PriceStat(NewsLocate):
         else:
             self.div_tag = div_list[idx]
             self.webfile_link = self.www + self.div_tag.findChild('div', attrs={"class": "document-list__item-link"}).findChild('a').get('href')
-            self.webfile_href = requests.get(self.webfile_link)
+            self.webfile_href = requests.get(self.webfile_link, verify=False)
             self.webfile_path, self.webfile_name = os.path.split(self.webfile_link)
 
     def get_title(self):
