@@ -1,4 +1,4 @@
-import os
+import os, sys
 import re, requests
 import subprocess
 from bs4 import BeautifulSoup
@@ -19,7 +19,7 @@ WEBPAGE = 'https://29.rosstat.gov.ru/production111'  # Поиск операти
 
 class NewsLocate:
     def __init__(self, web, HEADER, txt):
-        self.request = requests.get(web, headers=HEADER)
+        self.request = requests.get(web, headers=HEADER, verify=False)
         self.soup = BeautifulSoup(self.request.content, 'html.parser')
         self.atag = self.soup.find('a', text=re.compile(txt))
         if self.atag is not None:
@@ -73,7 +73,7 @@ def table_doc(doc):
         table_columns = len(table.columns)
         # В янв 2021г. 3 столбца, по факту 4 (объединены). В янв 2022 объединение удалено.
         if t == 0:
-            if table_columns != 3 or table_columns != 4: 
+            if table_columns != 4 or table_columns != 3: 
                 print(f'Внимание! Изменилась структура таблицы, проверьте скачанный файл.')
                 print(f'Количество столбцов в таблице t[{t}] = {table_columns}.')
         elif t == 1 and table_columns != 3:
@@ -186,17 +186,17 @@ def last_added_news(header):
     all_inds = stat_news.soup.find_all('div', text=re.compile('О промышленном производстве'))
 
     # re.sub(r'\s+', '', x.text).strip(): x.text - выделение заголовка. Удаление перевода строк, нач. и конечн. пробелов
-    industry_heads = [re.sub(r'\s+', ' ', x.text).strip() for x in all_inds if str(dt.now().year) in x.text]
+    # 2025-03 удалено условие <if str(dt.now().year) in x.text>, т.к. ограничивалось январем 2025. Ниже так же удалено условие.
+    # 2025-03 industry_heads = [re.sub(r'\s+', ' ', x.text).strip() for x in all_inds if str(dt.now().year) in x.text]
+    industry_heads = [re.sub(r'\s+', ' ', x.text).strip() for x in all_inds]
 
     # WEBPAGE.rsplit('/', 1)[0] - разделение строки на 2 подстроки, где символом разделения является слеш справа
     # x.find_parent().find_parent().find('a').get('href') - переход на 2 позиции выше, поиск тега 'a', извлечение 'href'
-    industry_hrefs = [f"{WEBPAGE.rsplit('/', 1)[0]}{x.find_parent().find_parent().find('a').get('href')}"
-                      for x in all_inds if str(dt.now().year) in x.text]
+    industry_hrefs = [f"{WEBPAGE.rsplit('/', 1)[0]}{x.find_parent().find_parent().find('a').get('href')}" for x in all_inds]
 
     date_pattern = r'\d{2}\.\d{2}\.\d{4}'
     # Извлечение даты как текст и преобразование в datetime
-    industry_dates = [dt.strptime(re.search(date_pattern, x.find_next_sibling().text).group(0), '%d.%m.%Y')
-                      for x in all_inds if str(dt.now().year) in x.text]
+    industry_dates = [dt.strptime(re.search(date_pattern, x.find_next_sibling().text).group(0), '%d.%m.%Y') for x in all_inds]
 
     # Если последняя дата из БД совпадает с 1-ой найденной на сайте, то возвращаем пустой словарь
     last_db_date_index = industry_dates.index(last_db_date)  # Определяем индекс даты из БД в списке дат с сайта Росстата
@@ -226,7 +226,7 @@ def create_file(file_href, year):
     # Если файла нет, то скачиваем с помощью requests.get
     if not os.path.exists(f_path):
         with open(f_path, 'wb') as f:
-            f.write(requests.get(file_href).content)
+            f.write(requests.get(file_href, verify=False).content)
 
     # Перевод doc файла в docx
     if not os.path.exists(f"{f_path}x"):
@@ -261,8 +261,9 @@ def populate():
         # Значения из str в float
         table1_float = floating(2, table1)
         table2_float = floating(1, table2)
+        
         create_db(news_id, table1_float, table2_float, is_jan)
-
+        
         print('--------------------------------------------------------')
         print(f"Добавление данных за {k.strftime('%d.%m.%Y')} завершено")
         send_msg.sending('industry', news_id, head_dict[k][0])
